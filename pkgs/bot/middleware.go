@@ -25,13 +25,33 @@ func Logger() HandlerFunc {
 		ctx.Next()
 		
 		duration := time.Since(start)
-		log.Printf("[%s] PostType: %s, MessageType: %s, UserID: %d, GroupID: %d, Duration: %v",
-			ctx.Event.PostType,
-			ctx.Event.MessageType,
-			ctx.Event.UserID,
-			ctx.Event.GroupID,
-			duration,
-		)
+		
+		if ctx.Event.PostType == EventTypeMessage {
+			log.Printf("[%s] Type=%s UserID=%d GroupID=%d Message=%s Duration=%v",
+				ctx.Event.PostType,
+				ctx.Event.MessageType,
+				ctx.Event.UserID,
+				ctx.Event.GroupID,
+				ctx.Event.RawMessage,
+				duration,
+			)
+		} else if ctx.Event.PostType == EventTypeNotice {
+			log.Printf("[%s] NoticeType=%s UserID=%d GroupID=%d Duration=%v",
+				ctx.Event.PostType,
+				ctx.Event.NoticeType,
+				ctx.Event.UserID,
+				ctx.Event.GroupID,
+				duration,
+			)
+		} else if ctx.Event.PostType == EventTypeRequest {
+			log.Printf("[%s] RequestType=%s UserID=%d Comment=%s Duration=%v",
+				ctx.Event.PostType,
+				ctx.Event.RequestType,
+				ctx.Event.UserID,
+				ctx.Event.Comment,
+				duration,
+			)
+		}
 	}
 }
 
