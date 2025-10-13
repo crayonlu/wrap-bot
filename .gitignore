@@ -1,6 +1,7 @@
 .env
 copilot-instructions.md
 napcat.txt
+siliconflow.txt
 ARCHITECTURE.md
 llms.md
 build

@@ -9,4 +9,5 @@ func Register(engine *bot.Engine, cfg *config.Config) {
 	engine.Use(PingPlugin(cfg))
 	engine.Use(EchoPlugin(cfg))
 	engine.Use(HelpPlugin(cfg))
+	engine.Use(AIChatPlugin(cfg))
 }
