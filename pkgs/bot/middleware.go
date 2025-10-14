@@ -36,14 +36,14 @@ func Logger() HandlerFunc {
 				ctx.Event.RawMessage,
 				duration,
 			)
-		// case EventTypeNotice:
-		// 	log.Printf("[%s] NoticeType=%s UserID=%d GroupID=%d Duration=%v",
-		// 		ctx.Event.PostType,
-		// 		ctx.Event.NoticeType,
-		// 		ctx.Event.UserID,
-		// 		ctx.Event.GroupID,
-		// 		duration,
-		// 	)
+		case EventTypeNotice:
+			log.Printf("[%s] NoticeType=%s UserID=%d GroupID=%d Duration=%v",
+				ctx.Event.PostType,
+				ctx.Event.NoticeType,
+				ctx.Event.UserID,
+				ctx.Event.GroupID,
+				duration,
+			)
 		case EventTypeRequest:
 			log.Printf("[%s] RequestType=%s UserID=%d Comment=%s Duration=%v",
 				ctx.Event.PostType,

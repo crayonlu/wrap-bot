@@ -104,7 +104,6 @@ func TechPushPlugin(cfg *config.Config, sched *scheduler.Scheduler) bot.HandlerF
 
 	return func(ctx *bot.Context) {
 		if ctx.Event.RawMessage == "/tech" || ctx.Event.RawMessage == "/techpush" {
-			log.Printf("TechPushPlugin: manual trigger received from user %d", ctx.Event.UserID)
 			sendDailyTechPush(cfg, client, fetchedData)
 			return
 		}
@@ -113,7 +112,6 @@ func TechPushPlugin(cfg *config.Config, sched *scheduler.Scheduler) bot.HandlerF
 }
 
 func sendDailyTechPush(cfg *config.Config, client *HotAPIClient, cachedData map[string][]byte) {
-	log.Println("TechPushPlugin: sendDailyTechPush started")
 	napcatClient := napcat.NewClient(cfg.NapCatHTTPURL, cfg.NapCatHTTPToken)
 
 	loginInfo, err := napcatClient.GetLoginInfo()
@@ -122,11 +120,9 @@ func sendDailyTechPush(cfg *config.Config, client *HotAPIClient, cachedData map[
 		return
 	}
 	botQQ := loginInfo.UserID
-	log.Printf("TechPushPlugin: bot QQ is %d", botQQ)
 
 	freshData := make(map[string][]byte)
 	for name, source := range dataSources {
-		log.Printf("TechPushPlugin: fetching %s from %s", name, source.endpoint)
 		data, err := client.Get(source.endpoint)
 		if err != nil {
 			log.Printf("TechPushPlugin: failed to fetch fresh %s data, using cache: %v", name, err)
@@ -134,22 +130,18 @@ func sendDailyTechPush(cfg *config.Config, client *HotAPIClient, cachedData map[
 				freshData[name] = cached
 			}
 		} else {
-			log.Printf("TechPushPlugin: successfully fetched %s, size: %d bytes", name, len(data))
 			freshData[name] = data
 			cachedData[name] = data
 		}
 	}
 
-	log.Printf("TechPushPlugin: total data sources fetched: %d", len(freshData))
 	forwardNodes := buildForwardNodes(freshData, botQQ)
-	log.Printf("TechPushPlugin: built %d forward nodes", len(forwardNodes))
 	if len(forwardNodes) == 0 {
 		log.Println("TechPushPlugin: no data to send")
 		return
 	}
 
 	targetGroups := cfg.TechPushGroups
-	log.Printf("TechPushPlugin: sending to %d groups", len(targetGroups))
 	for _, groupID := range targetGroups {
 		_, err := napcatClient.SendGroupForwardMsg(groupID, forwardNodes)
 		if err != nil {
@@ -160,7 +152,6 @@ func sendDailyTechPush(cfg *config.Config, client *HotAPIClient, cachedData map[
 	}
 
 	targetUsers := cfg.TechPushUsers
-	log.Printf("TechPushPlugin: sending to %d users", len(targetUsers))
 	for _, userID := range targetUsers {
 		_, err := napcatClient.SendPrivateForwardMsg(userID, forwardNodes)
 		if err != nil {
