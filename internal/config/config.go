@@ -26,6 +26,8 @@ type Config struct {
 	HotApiKey        string
 	TechPushGroups   []int64
 	TechPushUsers    []int64
+	AllowedUsers     []int64
+	AllowedGroups    []int64
 }
 
 func Load() *Config {
@@ -48,6 +50,8 @@ func Load() *Config {
 		HotApiKey:        getEnv("HOT_API_KEY", "keykeykey"),
 		TechPushGroups:   getEnvInt64Slice("TECH_PUSH_GROUPS", []int64{}),
 		TechPushUsers:    getEnvInt64Slice("TECH_PUSH_USERS", []int64{}),
+		AllowedUsers:     getEnvInt64Slice("ALLOWED_USERS", []int64{}),
+		AllowedGroups:    getEnvInt64Slice("ALLOWED_GROUPS", []int64{}),
 	}
 }
 

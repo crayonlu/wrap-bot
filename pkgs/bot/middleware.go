@@ -21,12 +21,13 @@ func Recovery() HandlerFunc {
 func Logger() HandlerFunc {
 	return func(ctx *Context) {
 		start := time.Now()
-		
+
 		ctx.Next()
-		
+
 		duration := time.Since(start)
-		
-		if ctx.Event.PostType == EventTypeMessage {
+
+		switch ctx.Event.PostType {
+		case EventTypeMessage:
 			log.Printf("[%s] Type=%s UserID=%d GroupID=%d Message=%s Duration=%v",
 				ctx.Event.PostType,
 				ctx.Event.MessageType,
@@ -35,7 +36,7 @@ func Logger() HandlerFunc {
 				ctx.Event.RawMessage,
 				duration,
 			)
-		} else if ctx.Event.PostType == EventTypeNotice {
+		case EventTypeNotice:
 			log.Printf("[%s] NoticeType=%s UserID=%d GroupID=%d Duration=%v",
 				ctx.Event.PostType,
 				ctx.Event.NoticeType,
@@ -43,7 +44,7 @@ func Logger() HandlerFunc {
 				ctx.Event.GroupID,
 				duration,
 			)
-		} else if ctx.Event.PostType == EventTypeRequest {
+		case EventTypeRequest:
 			log.Printf("[%s] RequestType=%s UserID=%d Comment=%s Duration=%v",
 				ctx.Event.PostType,
 				ctx.Event.RequestType,
@@ -60,7 +61,7 @@ func FilterEventType(eventTypes ...EventType) HandlerFunc {
 	for _, t := range eventTypes {
 		typeMap[t] = true
 	}
-	
+
 	return func(ctx *Context) {
 		if !typeMap[ctx.Event.PostType] {
 			ctx.Abort()
@@ -75,7 +76,7 @@ func FilterMessageType(messageTypes ...MessageType) HandlerFunc {
 	for _, t := range messageTypes {
 		typeMap[t] = true
 	}
-	
+
 	return func(ctx *Context) {
 		if !typeMap[ctx.Event.MessageType] {
 			ctx.Abort()
@@ -90,7 +91,7 @@ func FilterGroup(groupIDs ...int64) HandlerFunc {
 	for _, id := range groupIDs {
 		groupMap[id] = true
 	}
-	
+
 	return func(ctx *Context) {
 		if !groupMap[ctx.Event.GroupID] {
 			ctx.Abort()
@@ -105,7 +106,7 @@ func FilterUser(userIDs ...int64) HandlerFunc {
 	for _, id := range userIDs {
 		userMap[id] = true
 	}
-	
+
 	return func(ctx *Context) {
 		if !userMap[ctx.Event.UserID] {
 			ctx.Abort()
@@ -120,13 +121,13 @@ func RateLimit(maxRequests int, duration time.Duration) HandlerFunc {
 		count     int
 		resetTime time.Time
 	}
-	
+
 	cache := make(map[int64]*entry)
-	
+
 	return func(ctx *Context) {
 		userID := ctx.Event.UserID
 		now := time.Now()
-		
+
 		e, exists := cache[userID]
 		if !exists || now.After(e.resetTime) {
 			cache[userID] = &entry{
@@ -136,12 +137,12 @@ func RateLimit(maxRequests int, duration time.Duration) HandlerFunc {
 			ctx.Next()
 			return
 		}
-		
+
 		if e.count >= maxRequests {
 			ctx.Abort()
 			return
 		}
-		
+
 		e.count++
 		ctx.Next()
 	}
@@ -152,7 +153,7 @@ func AdminOnly(adminIDs ...int64) HandlerFunc {
 	for _, id := range adminIDs {
 		adminMap[id] = true
 	}
-	
+
 	return func(ctx *Context) {
 		if !adminMap[ctx.Event.UserID] {
 			ctx.Abort()
@@ -168,13 +169,46 @@ func GroupAdminOnly() HandlerFunc {
 			ctx.Abort()
 			return
 		}
-		
+
 		role := ctx.Event.Sender.Role
 		if role != "admin" && role != "owner" {
 			ctx.Abort()
 			return
 		}
-		
+
+		ctx.Next()
+	}
+}
+
+func Authentication(allowedUsers []int64, allowedGroups []int64) HandlerFunc {
+	userMap := make(map[int64]bool)
+	for _, id := range allowedUsers {
+		userMap[id] = true
+	}
+
+	groupMap := make(map[int64]bool)
+	for _, id := range allowedGroups {
+		groupMap[id] = true
+	}
+
+	return func(ctx *Context) {
+		if len(userMap) == 0 && len(groupMap) == 0 {
+			ctx.Next()
+			return
+		}
+
+		if ctx.Event.MessageType == MessageTypePrivate {
+			if len(userMap) > 0 && !userMap[ctx.Event.UserID] {
+				ctx.Abort()
+				return
+			}
+		} else if ctx.Event.MessageType == MessageTypeGroup {
+			if len(groupMap) > 0 && !groupMap[ctx.Event.GroupID] {
+				ctx.Abort()
+				return
+			}
+		}
+
 		ctx.Next()
 	}
 }
