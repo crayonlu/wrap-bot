@@ -7,7 +7,7 @@ It is developed using golang which is known for its high concurrency
 Use onion modal pattern,which is a intuitive way
 ---------
 - **Trace:** Start from 2025.10.12...
-- **Status:** In Active Development
+- **Status:** 🚧 In Active Development
 
 > Project Structure
 
