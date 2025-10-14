@@ -42,38 +42,38 @@ func (c *Client) doRequest(endpoint string, method string, payload interface{}) 
 		}
 		body = bytes.NewBuffer(data)
 	}
-	
+
 	url := c.baseURL + endpoint
 	req, err := http.NewRequest(method, url, body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
-	
+
 	req.Header.Set("Content-Type", "application/json")
 	if c.token != "" {
 		req.Header.Set("Authorization", "Bearer "+c.token)
 	}
-	
+
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to do request: %w", err)
 	}
 	defer resp.Body.Close()
-	
+
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response: %w", err)
 	}
-	
+
 	var apiResp Response
 	if err := json.Unmarshal(respBody, &apiResp); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
 	}
-	
+
 	if apiResp.RetCode != 0 {
 		return &apiResp, fmt.Errorf("API error: %s (code: %d)", apiResp.Message, apiResp.RetCode)
 	}
-	
+
 	return &apiResp, nil
 }
 
@@ -83,4 +83,23 @@ func (c *Client) post(endpoint string, payload interface{}) (*Response, error) {
 
 func (c *Client) get(endpoint string) (*Response, error) {
 	return c.doRequest(endpoint, http.MethodGet, nil)
+}
+
+type LoginInfo struct {
+	UserID   int64  `json:"user_id"`
+	Nickname string `json:"nickname"`
+}
+
+func (c *Client) GetLoginInfo() (*LoginInfo, error) {
+	resp, err := c.get("/get_login_info")
+	if err != nil {
+		return nil, err
+	}
+
+	var info LoginInfo
+	if err := json.Unmarshal(resp.Data, &info); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal login info: %w", err)
+	}
+
+	return &info, nil
 }

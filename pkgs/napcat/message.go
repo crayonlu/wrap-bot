@@ -5,6 +5,16 @@ import (
 	"github.com/crayon/bot_golang/pkgs/bot"
 )
 
+type ForwardNode struct {
+	Type string                 `json:"type"`
+	Data map[string]interface{} `json:"data"`
+}
+
+type MessageSegment struct {
+	Type string                 `json:"type"`
+	Data map[string]interface{} `json:"data"`
+}
+
 func (c *Client) SendGroupMessage(groupID int64, message interface{}) (int32, error) {
 	payload := map[string]interface{}{
 		"group_id": groupID,
@@ -120,4 +130,179 @@ func (c *Client) GetFriendList() ([]bot.Friend, error) {
 	}
 	
 	return friends, nil
+}
+
+func NewTextSegment(text string) MessageSegment {
+	return MessageSegment{
+		Type: "text",
+		Data: map[string]interface{}{
+			"text": text,
+		},
+	}
+}
+
+func NewImageSegment(file string) MessageSegment {
+	return MessageSegment{
+		Type: "image",
+		Data: map[string]interface{}{
+			"file": file,
+		},
+	}
+}
+
+func NewAtSegment(qq int64) MessageSegment {
+	return MessageSegment{
+		Type: "at",
+		Data: map[string]interface{}{
+			"qq": qq,
+		},
+	}
+}
+
+func NewAtAllSegment() MessageSegment {
+	return MessageSegment{
+		Type: "at",
+		Data: map[string]interface{}{
+			"qq": "all",
+		},
+	}
+}
+
+func NewFaceSegment(id int) MessageSegment {
+	return MessageSegment{
+		Type: "face",
+		Data: map[string]interface{}{
+			"id": id,
+		},
+	}
+}
+
+func NewVideoSegment(file string) MessageSegment {
+	return MessageSegment{
+		Type: "video",
+		Data: map[string]interface{}{
+			"file": file,
+		},
+	}
+}
+
+func NewRecordSegment(file string) MessageSegment {
+	return MessageSegment{
+		Type: "record",
+		Data: map[string]interface{}{
+			"file": file,
+		},
+	}
+}
+
+func NewCustomForwardNode(name string, uin int64, content interface{}) ForwardNode {
+	return ForwardNode{
+		Type: "node",
+		Data: map[string]interface{}{
+			"name":    name,
+			"uin":     uin,
+			"content": content,
+		},
+	}
+}
+
+func NewMixedForwardNode(name string, uin int64, segments ...MessageSegment) ForwardNode {
+	content := make([]interface{}, len(segments))
+	for i, seg := range segments {
+		content[i] = seg
+	}
+	
+	return ForwardNode{
+		Type: "node",
+		Data: map[string]interface{}{
+			"name":    name,
+			"uin":     uin,
+			"content": content,
+		},
+	}
+}
+
+func NewMessageForwardNode(messageID int32) ForwardNode {
+	return ForwardNode{
+		Type: "node",
+		Data: map[string]interface{}{
+			"id": messageID,
+		},
+	}
+}
+
+func (c *Client) SendGroupForwardMsg(groupID int64, nodes []ForwardNode) (map[string]interface{}, error) {
+	payload := map[string]interface{}{
+		"group_id": groupID,
+		"messages": nodes,
+	}
+	
+	resp, err := c.post("/send_group_forward_msg", payload)
+	if err != nil {
+		return nil, err
+	}
+	
+	var result map[string]interface{}
+	if err := json.Unmarshal(resp.Data, &result); err != nil {
+		return nil, err
+	}
+	
+	return result, nil
+}
+
+func (c *Client) SendPrivateForwardMsg(userID int64, nodes []ForwardNode) (map[string]interface{}, error) {
+	payload := map[string]interface{}{
+		"user_id":  userID,
+		"messages": nodes,
+	}
+	
+	resp, err := c.post("/send_private_forward_msg", payload)
+	if err != nil {
+		return nil, err
+	}
+	
+	var result map[string]interface{}
+	if err := json.Unmarshal(resp.Data, &result); err != nil {
+		return nil, err
+	}
+	
+	return result, nil
+}
+
+func (c *Client) GetForwardMsg(messageID string) (map[string]interface{}, error) {
+	payload := map[string]interface{}{
+		"message_id": messageID,
+	}
+	
+	resp, err := c.post("/get_forward_msg", payload)
+	if err != nil {
+		return nil, err
+	}
+	
+	var result map[string]interface{}
+	if err := json.Unmarshal(resp.Data, &result); err != nil {
+		return nil, err
+	}
+	
+	return result, nil
+}
+
+func (c *Client) ForwardMsgToGroup(groupID int64, messageID int32) error {
+	payload := map[string]interface{}{
+		"group_id":   groupID,
+		"message_id": messageID,
+	}
+	
+	_, err := c.post("/forward_group_single_msg", payload)
+	return err
+}
+
+func (c *Client) ForwardMsgToPrivate(userID int64, messageID int32) error {
+	payload := map[string]interface{}{
+		"user_id":    userID,
+		"message_id": messageID,
+	}
+	
+	_, err := c.post("/forward_friend_single_msg", payload)
+	return err
 }

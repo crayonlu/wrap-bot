@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 )
 
 type Config struct {
@@ -21,6 +22,10 @@ type Config struct {
 	AIKey            string
 	AIModel          string
 	SystemPromptPath string
+	HotApiHost       string
+	HotApiKey        string
+	TechPushGroups   []int64
+	TechPushUsers    []int64
 }
 
 func Load() *Config {
@@ -39,6 +44,10 @@ func Load() *Config {
 		AIKey:            getEnv("AI_KEY", "YOUR_API_KEY_HERE"),
 		AIModel:          getEnv("AI_MODEL", "deepseek-ai/DeepSeek-V3.1"),
 		SystemPromptPath: getEnv("SYSTEM_PROMPT_PATH", "configs/system_prompt.md"),
+		HotApiHost:       getEnv("HOT_API_HOST", "https://hot-api.crayoncreator.top"),
+		HotApiKey:        getEnv("HOT_API_KEY", "keykeykey"),
+		TechPushGroups:   getEnvInt64Slice("TECH_PUSH_GROUPS", []int64{}),
+		TechPushUsers:    getEnvInt64Slice("TECH_PUSH_USERS", []int64{}),
 	}
 }
 
@@ -62,5 +71,32 @@ func getEnvBool(key string, defaultValue bool) bool {
 }
 
 func getEnvInt64Slice(key string, defaultValue []int64) []int64 {
-	return defaultValue
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
+	}
+
+	parts := strings.Split(value, ",")
+	result := make([]int64, 0, len(parts))
+
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+
+		num, err := strconv.ParseInt(part, 10, 64)
+		if err != nil {
+			log.Printf("Invalid int64 value in %s: %s, skipping", key, part)
+			continue
+		}
+
+		result = append(result, num)
+	}
+
+	if len(result) == 0 {
+		return defaultValue
+	}
+
+	return result
 }
