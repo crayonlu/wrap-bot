@@ -103,6 +103,10 @@ func TechPushPlugin(cfg *config.Config, sched *scheduler.Scheduler) bot.HandlerF
 	})
 
 	return func(ctx *bot.Context) {
+		if ctx.Event.RawMessage == "/tech" {
+			sendDailyTechPush(cfg, client, fetchedData)
+			return
+		}
 		ctx.Next()
 	}
 }
