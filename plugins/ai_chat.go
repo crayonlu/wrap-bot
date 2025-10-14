@@ -203,7 +203,7 @@ func (ai *AIClient) Chat(conversationID, userMessage string) (string, error) {
 	choice := chatResp.Choices[0]
 
 	if len(choice.Message.ToolCalls) > 0 {
-		return ai.handleToolCalls(conversationID, messages, choice.Message)
+		return ai.handleToolCalls(conversationID, choice.Message)
 	}
 
 	assistantMsg := Message{Role: "assistant", Content: choice.Message.Content}
@@ -212,7 +212,7 @@ func (ai *AIClient) Chat(conversationID, userMessage string) (string, error) {
 	return choice.Message.Content, nil
 }
 
-func (ai *AIClient) handleToolCalls(conversationID string, messages []Message, assistantMsg Message) (string, error) {
+func (ai *AIClient) handleToolCalls(conversationID string, assistantMsg Message) (string, error) {
 	ai.history.Add(conversationID, assistantMsg)
 
 	for _, toolCall := range assistantMsg.ToolCalls {
@@ -226,7 +226,7 @@ func (ai *AIClient) handleToolCalls(conversationID string, messages []Message, a
 		ai.history.Add(conversationID, toolMsg)
 	}
 
-	messages = []Message{{Role: "system", Content: ai.systemPrompt}}
+	messages := []Message{{Role: "system", Content: ai.systemPrompt}}
 	messages = append(messages, ai.history.Get(conversationID)...)
 
 	reqBody := ChatRequest{
