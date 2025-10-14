@@ -187,7 +187,7 @@ func buildForwardNodes(data map[string][]byte, botQQ int64) []napcat.ForwardNode
 				log.Printf("TechPushPlugin: failed to parse %s: %v", name, err)
 				continue
 			}
-			nodes = append(nodes, buildGenericNodes(res.Name, res.Articles, 20, botQQ)...)
+			nodes = append(nodes, buildGenericNodes(res.Title, res.Articles, 20, botQQ)...)
 
 		case func([]byte) (*handlers.BilibiliRes, error):
 			res, err := handler(rawData)
@@ -195,7 +195,7 @@ func buildForwardNodes(data map[string][]byte, botQQ int64) []napcat.ForwardNode
 				log.Printf("TechPushPlugin: failed to parse %s: %v", name, err)
 				continue
 			}
-			nodes = append(nodes, buildGenericNodes(res.Name, res.Videos, 20, botQQ)...)
+			nodes = append(nodes, buildGenericNodes(res.Title, res.Videos, 20, botQQ)...)
 		}
 	}
 

@@ -18,20 +18,15 @@ type BilibiliVideo struct {
 }
 
 type BilibiliRes struct {
-	Name     string          `json:"name"`
-	Videos  []BilibiliVideo  `json:"videos"`
+	Title  string          `json:"title"`
+	Videos []BilibiliVideo `json:"data"`
 }
 
 func BilibiliHandler(data []byte) (*BilibiliRes, error) {
-	var result map[string]interface{}
-	if err := json.Unmarshal(data, &result); err != nil {
+	var res BilibiliRes
+	if err := json.Unmarshal(data, &res); err != nil {
 		return nil, fmt.Errorf("failed to parse bilibili data: %w", err)
 	}
-	name := result["title"].(string)
-	videos := result["data"].([]BilibiliVideo)
 
-	return &BilibiliRes{
-		Name:    name,
-		Videos: videos,
-	}, nil
+	return &res, nil
 }

@@ -14,20 +14,15 @@ type JuejinArticle struct {
 }
 
 type JuejinRes struct {
-	Name     string          `json:"name"`
-	Articles []JuejinArticle `json:"articles"`
+	Title    string          `json:"title"`
+	Articles []JuejinArticle `json:"data"`
 }
 
 func JuejinHandler(data []byte) (*JuejinRes, error) {
-	var result map[string]interface{}
-	if err := json.Unmarshal(data, &result); err != nil {
+	var res JuejinRes
+	if err := json.Unmarshal(data, &res); err != nil {
 		return nil, fmt.Errorf("failed to parse juejin data: %w", err)
 	}
-	name := result["title"].(string)
-	articles := result["data"].([]JuejinArticle)
 
-	return &JuejinRes{
-		Name:     name,
-		Articles: articles,
-	}, nil
+	return &res, nil
 }
