@@ -9,6 +9,8 @@ Use onion modal pattern,which is a intuitive way
 - **Trace:** Start from 2025.10.12...
 - **Status:** 🚧 In Active Development
 
+![Architexture](/docs/Architecture.svg)
+
 > Project Structure
 
 ```
@@ -60,3 +62,5 @@ bot/
 - Registration-based plugin loading
 - Middleware chain execution
 - Support for commands, event handlers, and scheduled tasks
+
+![System](/docs/System.svg)
