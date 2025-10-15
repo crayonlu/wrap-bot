@@ -1,4 +1,4 @@
-package plugins
+package tech_push
 
 import (
 	"fmt"
@@ -9,15 +9,13 @@ import (
 	"time"
 
 	"github.com/crayon/bot_golang/internal/config"
-	"github.com/crayon/bot_golang/pkgs/bot"
-	scheduler "github.com/crayon/bot_golang/pkgs/feature"
+	"github.com/crayon/bot_golang/pkgs/feature/tech_push/handlers"
 	"github.com/crayon/bot_golang/pkgs/napcat"
-	"github.com/crayon/bot_golang/plugins/tech_push/handlers"
 )
 
 type DataSource struct {
-	endpoint string
-	handler  interface{}
+	Endpoint string
+	Handler  interface{}
 }
 
 type HotAPIClient struct {
@@ -28,12 +26,12 @@ type HotAPIClient struct {
 
 var dataSources = map[string]DataSource{
 	"juejin": {
-		endpoint: "/juejin",
-		handler:  handlers.JuejinHandler,
+		Endpoint: "/juejin",
+		Handler:  handlers.JuejinHandler,
 	},
 	"bilibili": {
-		endpoint: "/bilibili",
-		handler:  handlers.BilibiliHandler,
+		Endpoint: "/bilibili",
+		Handler:  handlers.BilibiliHandler,
 	},
 }
 
@@ -73,59 +71,21 @@ func (c *HotAPIClient) Get(endpoint string) ([]byte, error) {
 	return body, nil
 }
 
-func TechPushPlugin(cfg *config.Config, sched *scheduler.Scheduler) bot.HandlerFunc {
-	apiHost := cfg.HotApiHost
-	apiKey := cfg.HotApiKey
-	if apiHost == "" || apiKey == "" {
-		log.Println("TechPushPlugin: HOT_API_HOST or HOT_API_KEY is not set, skipping plugin")
-		return func(ctx *bot.Context) {}
-	}
-
-	client := NewHotAPIClient(apiHost, apiKey)
-
-	fetchedData := make(map[string][]byte)
-	for name, source := range dataSources {
-		data, err := client.Get(source.endpoint)
-		if err != nil {
-			log.Printf("TechPushPlugin: failed to fetch %s data: %v", name, err)
-		} else {
-			fetchedData[name] = data
-		}
-	}
-
-	if len(fetchedData) == 0 {
-		log.Println("TechPushPlugin: all initial data fetch failed, skipping plugin")
-		return func(ctx *bot.Context) {}
-	}
-
-	sched.At(8, 0, 0).WithID("tech-push-daily").Do(func() {
-		sendDailyTechPush(cfg, client, fetchedData)
-	})
-
-	return func(ctx *bot.Context) {
-		if ctx.Event.RawMessage == "/tech" || ctx.Event.RawMessage == "/techpush" {
-			sendDailyTechPush(cfg, client, fetchedData)
-			return
-		}
-		ctx.Next()
-	}
-}
-
-func sendDailyTechPush(cfg *config.Config, client *HotAPIClient, cachedData map[string][]byte) {
+func SendTechPush(cfg *config.Config, cachedData map[string][]byte) error {
+	client := NewHotAPIClient(cfg.HotApiHost, cfg.HotApiKey)
 	napcatClient := napcat.NewClient(cfg.NapCatHTTPURL, cfg.NapCatHTTPToken)
 
 	loginInfo, err := napcatClient.GetLoginInfo()
 	if err != nil {
-		log.Printf("TechPushPlugin: failed to get bot login info: %v", err)
-		return
+		return fmt.Errorf("failed to get bot login info: %w", err)
 	}
 	botQQ := loginInfo.UserID
 
 	freshData := make(map[string][]byte)
 	for name, source := range dataSources {
-		data, err := client.Get(source.endpoint)
+		data, err := client.Get(source.Endpoint)
 		if err != nil {
-			log.Printf("TechPushPlugin: failed to fetch fresh %s data, using cache: %v", name, err)
+			log.Printf("Failed to fetch %s data, using cache: %v", name, err)
 			if cached, ok := cachedData[name]; ok {
 				freshData[name] = cached
 			}
@@ -137,29 +97,27 @@ func sendDailyTechPush(cfg *config.Config, client *HotAPIClient, cachedData map[
 
 	forwardNodes := buildForwardNodes(freshData, botQQ)
 	if len(forwardNodes) == 0 {
-		log.Println("TechPushPlugin: no data to send")
-		return
+		return fmt.Errorf("no data to send")
 	}
 
-	targetGroups := cfg.TechPushGroups
-	for _, groupID := range targetGroups {
+	var sendErr error
+	for _, groupID := range cfg.TechPushGroups {
 		_, err := napcatClient.SendGroupForwardMsg(groupID, forwardNodes)
 		if err != nil {
-			log.Printf("TechPushPlugin: failed to send to group %d: %v", groupID, err)
-		} else {
-			log.Printf("TechPushPlugin: sent daily tech push to group %d", groupID)
+			log.Printf("Failed to send to group %d: %v", groupID, err)
+			sendErr = err
 		}
 	}
 
-	targetUsers := cfg.TechPushUsers
-	for _, userID := range targetUsers {
+	for _, userID := range cfg.TechPushUsers {
 		_, err := napcatClient.SendPrivateForwardMsg(userID, forwardNodes)
 		if err != nil {
-			log.Printf("TechPushPlugin: failed to send to user %d: %v", userID, err)
-		} else {
-			log.Printf("TechPushPlugin: sent daily tech push to user %d", userID)
+			log.Printf("Failed to send to user %d: %v", userID, err)
+			sendErr = err
 		}
 	}
+
+	return sendErr
 }
 
 func buildForwardNodes(data map[string][]byte, botQQ int64) []napcat.ForwardNode {
@@ -171,11 +129,11 @@ func buildForwardNodes(data map[string][]byte, botQQ int64) []napcat.ForwardNode
 			continue
 		}
 
-		switch handler := source.handler.(type) {
+		switch handler := source.Handler.(type) {
 		case func([]byte) (*handlers.JuejinRes, error):
 			res, err := handler(rawData)
 			if err != nil {
-				log.Printf("TechPushPlugin: failed to parse %s: %v", name, err)
+				log.Printf("Failed to parse %s: %v", name, err)
 				continue
 			}
 			nodes = append(nodes, buildGenericNodes(res.Title, res.Articles, 20, botQQ)...)
@@ -183,7 +141,7 @@ func buildForwardNodes(data map[string][]byte, botQQ int64) []napcat.ForwardNode
 		case func([]byte) (*handlers.BilibiliRes, error):
 			res, err := handler(rawData)
 			if err != nil {
-				log.Printf("TechPushPlugin: failed to parse %s: %v", name, err)
+				log.Printf("Failed to parse %s: %v", name, err)
 				continue
 			}
 			nodes = append(nodes, buildGenericNodes(res.Title, res.Videos, 20, botQQ)...)
