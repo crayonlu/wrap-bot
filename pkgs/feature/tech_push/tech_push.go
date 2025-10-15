@@ -142,7 +142,7 @@ func buildForwardNodes(data map[string][]byte, botQQ int64, aiEnabled bool) []na
 				log.Printf("Failed to parse %s: %v", name, err)
 				continue
 			}
-			nodes = append(nodes, buildGenericNodes(res.Title, res.Articles, 20, botQQ, aiEnabled)...)
+			nodes = append(nodes, buildGenericNodes(res.Title, res.Articles, 10, botQQ, aiEnabled)...)
 
 		case func([]byte) (*handlers.BilibiliRes, error):
 			res, err := handler(rawData)
@@ -150,7 +150,7 @@ func buildForwardNodes(data map[string][]byte, botQQ int64, aiEnabled bool) []na
 				log.Printf("Failed to parse %s: %v", name, err)
 				continue
 			}
-			nodes = append(nodes, buildGenericNodes(res.Title, res.Videos, 20, botQQ, aiEnabled)...)
+			nodes = append(nodes, buildGenericNodes(res.Title, res.Videos, 10, botQQ, aiEnabled)...)
 		}
 	}
 
