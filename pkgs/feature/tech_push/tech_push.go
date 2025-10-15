@@ -122,12 +122,14 @@ func SendTechPush(cfg *config.Config, cachedData map[string][]byte) error {
 }
 
 func AnalyzeTechWithAI(title, content string) (string, error) {
-	prompt := fmt.Sprintf("分析一下今天的热点\n标题：%s\n内容：%s", title, content)
+	prompt := fmt.Sprintf("总结分析今日热点，以下是热点列表：%s", content)
+	log.Printf("[TechPush] AI analyzing %d chars of content", len(content))
 	return ai.Chat(prompt, false)
 }
 
 func buildForwardNodes(data map[string][]byte, botQQ int64, aiEnabled bool) []napcat.ForwardNode {
 	var nodes []napcat.ForwardNode
+	var allContent string
 
 	for name, source := range dataSources {
 		rawData, ok := data[name]
@@ -142,7 +144,10 @@ func buildForwardNodes(data map[string][]byte, botQQ int64, aiEnabled bool) []na
 				log.Printf("Failed to parse %s: %v", name, err)
 				continue
 			}
-			nodes = append(nodes, buildGenericNodes(res.Title, res.Articles, 10, botQQ, aiEnabled)...)
+			nodes = append(nodes, buildGenericNodes(res.Title, res.Articles, 10, botQQ, false)...)
+			if aiEnabled {
+				allContent += formatContentForAI(res.Title, res.Articles, 10)
+			}
 
 		case func([]byte) (*handlers.BilibiliRes, error):
 			res, err := handler(rawData)
@@ -150,7 +155,23 @@ func buildForwardNodes(data map[string][]byte, botQQ int64, aiEnabled bool) []na
 				log.Printf("Failed to parse %s: %v", name, err)
 				continue
 			}
-			nodes = append(nodes, buildGenericNodes(res.Title, res.Videos, 10, botQQ, aiEnabled)...)
+			nodes = append(nodes, buildGenericNodes(res.Title, res.Videos, 10, botQQ, false)...)
+			if aiEnabled {
+				allContent += formatContentForAI(res.Title, res.Videos, 10)
+			}
+		}
+	}
+
+	if aiEnabled && allContent != "" {
+		if analysis, err := AnalyzeTechWithAI("", allContent); err == nil {
+			aiNode := napcat.NewMixedForwardNode(
+				"AI 今日热点分析",
+				botQQ,
+				napcat.NewTextSegment("📝 "+analysis),
+			)
+			nodes = append([]napcat.ForwardNode{aiNode}, nodes...)
+		} else {
+			log.Printf("AI analysis failed: %v", err)
 		}
 	}
 
@@ -174,16 +195,6 @@ func buildGenericNodes(sourceName string, items interface{}, limit int, botQQ in
 		item := val.Index(i)
 		segments := structToSegments(item)
 
-		if aiEnabled {
-			title := extractTitle(item)
-			content := extractContent(segments)
-			if analysis, err := AnalyzeTechWithAI(title, content); err == nil {
-				segments = append(segments, napcat.NewTextSegment("\n📝 AI: "+analysis+"\n"))
-			} else {
-				log.Printf("AI analysis failed: %v", err)
-			}
-		}
-
 		node := napcat.NewMixedForwardNode(
 			sourceName,
 			botQQ,
@@ -193,6 +204,29 @@ func buildGenericNodes(sourceName string, items interface{}, limit int, botQQ in
 	}
 
 	return nodes
+}
+
+func formatContentForAI(sourceName string, items interface{}, limit int) string {
+	val := reflect.ValueOf(items)
+	if val.Kind() != reflect.Slice {
+		return ""
+	}
+
+	maxItems := val.Len()
+	if limit > 0 && limit < maxItems {
+		maxItems = limit
+	}
+
+	content := fmt.Sprintf("\n【%s】\n", sourceName)
+	for i := 0; i < maxItems; i++ {
+		item := val.Index(i)
+		title := extractTitle(item)
+		if title != "" {
+			content += fmt.Sprintf("%d. %s\n", i+1, title)
+		}
+	}
+
+	return content
 }
 
 func extractTitle(val reflect.Value) string {
@@ -208,21 +242,6 @@ func extractTitle(val reflect.Value) string {
 		return titleField.String()
 	}
 	return ""
-}
-
-func extractContent(segments []napcat.MessageSegment) string {
-	var content string
-	for _, seg := range segments {
-		if seg.Type == "text" {
-			if text, ok := seg.Data["text"].(string); ok {
-				content += text
-			}
-		}
-	}
-	if len(content) > 300 {
-		content = content[:300]
-	}
-	return content
 }
 
 func structToSegments(val reflect.Value) []napcat.MessageSegment {
