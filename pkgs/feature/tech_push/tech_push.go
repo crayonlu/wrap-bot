@@ -122,7 +122,11 @@ func SendTechPush(cfg *config.Config, cachedData map[string][]byte) error {
 }
 
 func AnalyzeTechWithAI(title, content string) (string, error) {
-	prompt := fmt.Sprintf("总结分析今日热点，以下是热点列表：%s", content)
+	prompt := fmt.Sprintf(`总结今日热点趋势：
+
+%s
+
+请分析主要技术趋势和值得关注的热点。`, content)
 	log.Printf("[TechPush] AI analyzing %d chars of content", len(content))
 	return ai.Chat(prompt, false)
 }
