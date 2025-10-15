@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/crayon/bot_golang/internal/config"
+	"github.com/crayon/bot_golang/pkgs/feature/ai"
 	"github.com/crayon/bot_golang/pkgs/feature/tech_push/handlers"
 	"github.com/crayon/bot_golang/pkgs/napcat"
 )
@@ -95,7 +96,7 @@ func SendTechPush(cfg *config.Config, cachedData map[string][]byte) error {
 		}
 	}
 
-	forwardNodes := buildForwardNodes(freshData, botQQ)
+	forwardNodes := buildForwardNodes(freshData, botQQ, cfg.AIEnabled)
 	if len(forwardNodes) == 0 {
 		return fmt.Errorf("no data to send")
 	}
@@ -120,7 +121,12 @@ func SendTechPush(cfg *config.Config, cachedData map[string][]byte) error {
 	return sendErr
 }
 
-func buildForwardNodes(data map[string][]byte, botQQ int64) []napcat.ForwardNode {
+func AnalyzeTechWithAI(title, content string) (string, error) {
+	prompt := fmt.Sprintf("分析一下今天的热点\n标题：%s\n内容：%s", title, content)
+	return ai.Chat(prompt, false)
+}
+
+func buildForwardNodes(data map[string][]byte, botQQ int64, aiEnabled bool) []napcat.ForwardNode {
 	var nodes []napcat.ForwardNode
 
 	for name, source := range dataSources {
@@ -136,7 +142,7 @@ func buildForwardNodes(data map[string][]byte, botQQ int64) []napcat.ForwardNode
 				log.Printf("Failed to parse %s: %v", name, err)
 				continue
 			}
-			nodes = append(nodes, buildGenericNodes(res.Title, res.Articles, 20, botQQ)...)
+			nodes = append(nodes, buildGenericNodes(res.Title, res.Articles, 20, botQQ, aiEnabled)...)
 
 		case func([]byte) (*handlers.BilibiliRes, error):
 			res, err := handler(rawData)
@@ -144,14 +150,14 @@ func buildForwardNodes(data map[string][]byte, botQQ int64) []napcat.ForwardNode
 				log.Printf("Failed to parse %s: %v", name, err)
 				continue
 			}
-			nodes = append(nodes, buildGenericNodes(res.Title, res.Videos, 20, botQQ)...)
+			nodes = append(nodes, buildGenericNodes(res.Title, res.Videos, 20, botQQ, aiEnabled)...)
 		}
 	}
 
 	return nodes
 }
 
-func buildGenericNodes(sourceName string, items interface{}, limit int, botQQ int64) []napcat.ForwardNode {
+func buildGenericNodes(sourceName string, items interface{}, limit int, botQQ int64, aiEnabled bool) []napcat.ForwardNode {
 	var nodes []napcat.ForwardNode
 
 	val := reflect.ValueOf(items)
@@ -168,6 +174,16 @@ func buildGenericNodes(sourceName string, items interface{}, limit int, botQQ in
 		item := val.Index(i)
 		segments := structToSegments(item)
 
+		if aiEnabled {
+			title := extractTitle(item)
+			content := extractContent(segments)
+			if analysis, err := AnalyzeTechWithAI(title, content); err == nil {
+				segments = append(segments, napcat.NewTextSegment("\n📝 AI: "+analysis+"\n"))
+			} else {
+				log.Printf("AI analysis failed: %v", err)
+			}
+		}
+
 		node := napcat.NewMixedForwardNode(
 			sourceName,
 			botQQ,
@@ -177,6 +193,36 @@ func buildGenericNodes(sourceName string, items interface{}, limit int, botQQ in
 	}
 
 	return nodes
+}
+
+func extractTitle(val reflect.Value) string {
+	if val.Kind() == reflect.Ptr {
+		val = val.Elem()
+	}
+	if val.Kind() != reflect.Struct {
+		return ""
+	}
+
+	titleField := val.FieldByName("Title")
+	if titleField.IsValid() && titleField.Kind() == reflect.String {
+		return titleField.String()
+	}
+	return ""
+}
+
+func extractContent(segments []napcat.MessageSegment) string {
+	var content string
+	for _, seg := range segments {
+		if seg.Type == "text" {
+			if text, ok := seg.Data["text"].(string); ok {
+				content += text
+			}
+		}
+	}
+	if len(content) > 300 {
+		content = content[:300]
+	}
+	return content
 }
 
 func structToSegments(val reflect.Value) []napcat.MessageSegment {
