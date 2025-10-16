@@ -5,11 +5,36 @@ import (
 
 	"github.com/crayon/bot_golang/internal/config"
 	scheduler "github.com/crayon/bot_golang/pkgs/feature"
+	"github.com/crayon/bot_golang/pkgs/feature/ai"
 	"github.com/crayon/bot_golang/pkgs/feature/tech_push"
 )
 
 type TechPushTask struct {
-	cache map[string][]byte
+	cache   map[string][]byte
+	service *tech_push.TechPush
+}
+
+func NewTechPushTask(cfg *config.Config) *TechPushTask {
+	var aiAnalyzer tech_push.AIAnalyzer
+
+	if cfg.AIEnabled {
+		aiService := ai.NewService(ai.Config{
+			APIURL:           cfg.AIURL,
+			APIKey:           cfg.AIKey,
+			Model:            cfg.AIModel,
+			SystemPromptPath: cfg.SystemPromptPath,
+			MaxHistory:       20,
+			Temperature:      0.7,
+			TopP:             0.9,
+			MaxTokens:        2000,
+		})
+		aiAnalyzer = ai.NewAnalyzer(aiService)
+	}
+
+	return &TechPushTask{
+		cache:   make(map[string][]byte),
+		service: tech_push.NewTechPush(cfg, aiAnalyzer),
+	}
 }
 
 func (t *TechPushTask) Name() string {
@@ -27,10 +52,8 @@ func (t *TechPushTask) Schedule(sched *scheduler.Scheduler, cfg *config.Config) 
 		return nil
 	}
 
-	t.cache = make(map[string][]byte)
-
 	sched.At(8, 0, 0).WithID(t.Name()).Do(func() {
-		if err := tech_push.SendTechPush(cfg, t.cache); err != nil {
+		if err := t.service.SendTechPush(t.cache); err != nil {
 			log.Printf("TechPushTask execution failed: %v", err)
 		} else {
 			log.Println("TechPushTask executed successfully")

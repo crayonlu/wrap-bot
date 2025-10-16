@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/crayon/bot_golang/internal/config"
-	"github.com/crayon/bot_golang/pkgs/feature/ai"
 	"github.com/crayon/bot_golang/pkgs/feature/tech_push/handlers"
 	"github.com/crayon/bot_golang/pkgs/napcat"
 )
@@ -72,9 +71,25 @@ func (c *HotAPIClient) Get(endpoint string) ([]byte, error) {
 	return body, nil
 }
 
-func SendTechPush(cfg *config.Config, cachedData map[string][]byte) error {
-	client := NewHotAPIClient(cfg.HotApiHost, cfg.HotApiKey)
-	napcatClient := napcat.NewClient(cfg.NapCatHTTPURL, cfg.NapCatHTTPToken)
+type TechPush struct {
+	cfg       *config.Config
+	aiService AIAnalyzer
+}
+
+type AIAnalyzer interface {
+	Analyze(content string) (string, error)
+}
+
+func NewTechPush(cfg *config.Config, aiService AIAnalyzer) *TechPush {
+	return &TechPush{
+		cfg:       cfg,
+		aiService: aiService,
+	}
+}
+
+func (tp *TechPush) SendTechPush(cachedData map[string][]byte) error {
+	client := NewHotAPIClient(tp.cfg.HotApiHost, tp.cfg.HotApiKey)
+	napcatClient := napcat.NewClient(tp.cfg.NapCatHTTPURL, tp.cfg.NapCatHTTPToken)
 
 	loginInfo, err := napcatClient.GetLoginInfo()
 	if err != nil {
@@ -96,13 +111,13 @@ func SendTechPush(cfg *config.Config, cachedData map[string][]byte) error {
 		}
 	}
 
-	forwardNodes := buildForwardNodes(freshData, botQQ, cfg.AIEnabled)
+	forwardNodes := tp.buildForwardNodes(freshData, botQQ)
 	if len(forwardNodes) == 0 {
 		return fmt.Errorf("no data to send")
 	}
 
 	var sendErr error
-	for _, groupID := range cfg.TechPushGroups {
+	for _, groupID := range tp.cfg.TechPushGroups {
 		_, err := napcatClient.SendGroupForwardMsg(groupID, forwardNodes)
 		if err != nil {
 			log.Printf("Failed to send to group %d: %v", groupID, err)
@@ -110,7 +125,7 @@ func SendTechPush(cfg *config.Config, cachedData map[string][]byte) error {
 		}
 	}
 
-	for _, userID := range cfg.TechPushUsers {
+	for _, userID := range tp.cfg.TechPushUsers {
 		_, err := napcatClient.SendPrivateForwardMsg(userID, forwardNodes)
 		if err != nil {
 			log.Printf("Failed to send to user %d: %v", userID, err)
@@ -121,17 +136,7 @@ func SendTechPush(cfg *config.Config, cachedData map[string][]byte) error {
 	return sendErr
 }
 
-func AnalyzeTechWithAI(title, content string) (string, error) {
-	prompt := fmt.Sprintf(`总结今日热点趋势：
-
-%s
-
-请分析主要技术趋势和值得关注的热点。`, content)
-	log.Printf("[TechPush] AI analyzing %d chars of content", len(content))
-	return ai.Chat(prompt, false)
-}
-
-func buildForwardNodes(data map[string][]byte, botQQ int64, aiEnabled bool) []napcat.ForwardNode {
+func (tp *TechPush) buildForwardNodes(data map[string][]byte, botQQ int64) []napcat.ForwardNode {
 	var nodes []napcat.ForwardNode
 	var allContent string
 
@@ -149,7 +154,7 @@ func buildForwardNodes(data map[string][]byte, botQQ int64, aiEnabled bool) []na
 				continue
 			}
 			nodes = append(nodes, buildGenericNodes(res.Title, res.Articles, 10, botQQ, false)...)
-			if aiEnabled {
+			if tp.cfg.AIEnabled {
 				allContent += formatContentForAI(res.Title, res.Articles, 10)
 			}
 
@@ -160,14 +165,14 @@ func buildForwardNodes(data map[string][]byte, botQQ int64, aiEnabled bool) []na
 				continue
 			}
 			nodes = append(nodes, buildGenericNodes(res.Title, res.Videos, 10, botQQ, false)...)
-			if aiEnabled {
+			if tp.cfg.AIEnabled {
 				allContent += formatContentForAI(res.Title, res.Videos, 10)
 			}
 		}
 	}
 
-	if aiEnabled && allContent != "" {
-		if analysis, err := AnalyzeTechWithAI("", allContent); err == nil {
+	if tp.cfg.AIEnabled && tp.aiService != nil && allContent != "" {
+		if analysis, err := tp.aiService.Analyze(allContent); err == nil {
 			aiNode := napcat.NewMixedForwardNode(
 				"AI 今日热点分析",
 				botQQ,

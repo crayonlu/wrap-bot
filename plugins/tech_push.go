@@ -5,16 +5,36 @@ import (
 
 	"github.com/crayon/bot_golang/internal/config"
 	"github.com/crayon/bot_golang/pkgs/bot"
+	"github.com/crayon/bot_golang/pkgs/feature/ai"
 	"github.com/crayon/bot_golang/pkgs/feature/tech_push"
 )
 
 var techPushCache = make(map[string][]byte)
+var techPushService *tech_push.TechPush
 
 func TechPushPlugin(cfg *config.Config) bot.HandlerFunc {
+	var aiAnalyzer tech_push.AIAnalyzer
+
+	if cfg.AIEnabled {
+		aiService := ai.NewService(ai.Config{
+			APIURL:           cfg.AIURL,
+			APIKey:           cfg.AIKey,
+			Model:            cfg.AIModel,
+			SystemPromptPath: cfg.SystemPromptPath,
+			MaxHistory:       20,
+			Temperature:      0.7,
+			TopP:             0.9,
+			MaxTokens:        2000,
+		})
+		aiAnalyzer = ai.NewAnalyzer(aiService)
+	}
+
+	techPushService = tech_push.NewTechPush(cfg, aiAnalyzer)
+
 	return func(ctx *bot.Context) {
 		if ctx.Event.RawMessage == "/tech" {
 			go func() {
-				if err := tech_push.SendTechPush(cfg, techPushCache); err != nil {
+				if err := techPushService.SendTechPush(techPushCache); err != nil {
 					log.Printf("Tech push failed: %v", err)
 				}
 			}()
