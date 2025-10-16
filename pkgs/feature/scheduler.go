@@ -2,6 +2,7 @@ package scheduler
 
 import (
 	"context"
+	"log"
 	"sync"
 	"time"
 )
@@ -283,9 +284,13 @@ func (ttb *TimeTaskBuilder) Do(fn TaskFunc) *Task {
 		target := time.Date(now.Year(), now.Month(), now.Day(), ttb.hour, ttb.minute, ttb.second, 0, now.Location())
 
 		if now.After(target) {
-			return
+			target = target.Add(24 * time.Hour)
 		}
 
+		duration := target.Sub(now)
+		log.Printf("[Scheduler] Task %s will execute in %v at %s", ttb.id, duration, target.Format("2006-01-02 15:04:05"))
+
+		time.Sleep(duration)
 		fn()
 	})
 
