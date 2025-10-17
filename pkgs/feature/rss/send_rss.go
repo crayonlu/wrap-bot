@@ -40,42 +40,19 @@ func (rp *RssPush) SendRssPush() error {
 		return fmt.Errorf("failed to fetch RSS feeds: %w", err)
 	}
 
-	forwardNodes := rp.buildForwardNodes(feeds, botQQ)
-	if len(forwardNodes) == 0 {
+	if len(feeds) == 0 {
 		return fmt.Errorf("no RSS data to send")
 	}
 
 	var sendErr error
-	for _, groupID := range rp.cfg.RssPushGroups {
-		_, err := napcatClient.SendGroupForwardMsg(groupID, forwardNodes)
-		if err != nil {
-			log.Printf("Failed to send RSS to group %d: %v", groupID, err)
-			sendErr = err
-		}
-	}
-
-	for _, userID := range rp.cfg.RssPushUsers {
-		_, err := napcatClient.SendPrivateForwardMsg(userID, forwardNodes)
-		if err != nil {
-			log.Printf("Failed to send RSS to user %d: %v", userID, err)
-			sendErr = err
-		}
-	}
-
-	return sendErr
-}
-
-func (rp *RssPush) buildForwardNodes(feeds map[string]*RSS, botQQ int64) []napcat.ForwardNode {
-	var mainNodes []napcat.ForwardNode
-
 	for feedID, rss := range feeds {
 		if rss.Channel == nil || len(rss.Channel.Items) == 0 {
 			log.Printf("Skipping empty feed: %s", feedID)
 			continue
 		}
 
-		subNodes := rp.buildFeedNodes(rss, botQQ)
-		if len(subNodes) == 0 {
+		forwardNodes := rp.buildFeedNodes(rss, botQQ)
+		if len(forwardNodes) == 0 {
 			continue
 		}
 
@@ -87,30 +64,30 @@ func (rp *RssPush) buildForwardNodes(feeds map[string]*RSS, botQQ int64) []napca
 					botQQ,
 					napcat.NewTextSegment("📊 "+analysis),
 				)
-				subNodes = append([]napcat.ForwardNode{aiNode}, subNodes...)
+				forwardNodes = append([]napcat.ForwardNode{aiNode}, forwardNodes...)
 			} else {
 				log.Printf("AI analysis failed for %s: %v", feedID, err)
 			}
 		}
 
-		content := make([]interface{}, len(subNodes))
-		for i, node := range subNodes {
-			content[i] = node
+		for _, groupID := range rp.cfg.RssPushGroups {
+			_, err := napcatClient.SendGroupForwardMsg(groupID, forwardNodes)
+			if err != nil {
+				log.Printf("Failed to send RSS %s to group %d: %v", feedID, groupID, err)
+				sendErr = err
+			}
 		}
 
-		mainNode := napcat.ForwardNode{
-			Type: "node",
-			Data: map[string]interface{}{
-				"name":    rss.Channel.Title,
-				"uin":     botQQ,
-				"content": content,
-			},
+		for _, userID := range rp.cfg.RssPushUsers {
+			_, err := napcatClient.SendPrivateForwardMsg(userID, forwardNodes)
+			if err != nil {
+				log.Printf("Failed to send RSS %s to user %d: %v", feedID, userID, err)
+				sendErr = err
+			}
 		}
-
-		mainNodes = append(mainNodes, mainNode)
 	}
 
-	return mainNodes
+	return sendErr
 }
 
 func (rp *RssPush) buildFeedNodes(rss *RSS, botQQ int64) []napcat.ForwardNode {
