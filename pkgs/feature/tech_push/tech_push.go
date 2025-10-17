@@ -2,74 +2,12 @@ package tech_push
 
 import (
 	"fmt"
-	"io"
 	"log"
-	"net/http"
-	"reflect"
-	"time"
 
 	"github.com/crayon/bot_golang/internal/config"
 	"github.com/crayon/bot_golang/pkgs/feature/tech_push/handlers"
 	"github.com/crayon/bot_golang/pkgs/napcat"
 )
-
-type DataSource struct {
-	Endpoint string
-	Handler  interface{}
-}
-
-type HotAPIClient struct {
-	baseURL string
-	apiKey  string
-	client  *http.Client
-}
-
-var dataSources = map[string]DataSource{
-	"juejin": {
-		Endpoint: "/juejin",
-		Handler:  handlers.JuejinHandler,
-	},
-	"bilibili": {
-		Endpoint: "/bilibili",
-		Handler:  handlers.BilibiliHandler,
-	},
-}
-
-func NewHotAPIClient(baseURL, apiKey string) *HotAPIClient {
-	return &HotAPIClient{
-		baseURL: baseURL,
-		apiKey:  apiKey,
-		client:  &http.Client{Timeout: 30 * time.Second},
-	}
-}
-
-func (c *HotAPIClient) Get(endpoint string) ([]byte, error) {
-	url := c.baseURL + endpoint
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Set("Authorization", "Bearer "+c.apiKey)
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := c.client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("API error %d: %s", resp.StatusCode, string(body))
-	}
-
-	return body, nil
-}
 
 type TechPush struct {
 	cfg       *config.Config
@@ -153,7 +91,7 @@ func (tp *TechPush) buildForwardNodes(data map[string][]byte, botQQ int64) []nap
 				log.Printf("Failed to parse %s: %v", name, err)
 				continue
 			}
-			nodes = append(nodes, buildGenericNodes(res.Title, res.Articles, 10, botQQ, false)...)
+			nodes = append(nodes, buildGenericNodes(res.Title, res.Articles, 10, botQQ)...)
 			if tp.cfg.AIEnabled {
 				allContent += formatContentForAI(res.Title, res.Articles, 10)
 			}
@@ -164,7 +102,7 @@ func (tp *TechPush) buildForwardNodes(data map[string][]byte, botQQ int64) []nap
 				log.Printf("Failed to parse %s: %v", name, err)
 				continue
 			}
-			nodes = append(nodes, buildGenericNodes(res.Title, res.Videos, 10, botQQ, false)...)
+			nodes = append(nodes, buildGenericNodes(res.Title, res.Videos, 10, botQQ)...)
 			if tp.cfg.AIEnabled {
 				allContent += formatContentForAI(res.Title, res.Videos, 10)
 			}
@@ -185,120 +123,4 @@ func (tp *TechPush) buildForwardNodes(data map[string][]byte, botQQ int64) []nap
 	}
 
 	return nodes
-}
-
-func buildGenericNodes(sourceName string, items interface{}, limit int, botQQ int64, aiEnabled bool) []napcat.ForwardNode {
-	var nodes []napcat.ForwardNode
-
-	val := reflect.ValueOf(items)
-	if val.Kind() != reflect.Slice {
-		return nodes
-	}
-
-	maxItems := val.Len()
-	if limit > 0 && limit < maxItems {
-		maxItems = limit
-	}
-
-	for i := 0; i < maxItems; i++ {
-		item := val.Index(i)
-		segments := structToSegments(item)
-
-		node := napcat.NewMixedForwardNode(
-			sourceName,
-			botQQ,
-			segments...,
-		)
-		nodes = append(nodes, node)
-	}
-
-	return nodes
-}
-
-func formatContentForAI(sourceName string, items interface{}, limit int) string {
-	val := reflect.ValueOf(items)
-	if val.Kind() != reflect.Slice {
-		return ""
-	}
-
-	maxItems := val.Len()
-	if limit > 0 && limit < maxItems {
-		maxItems = limit
-	}
-
-	content := fmt.Sprintf("\n【%s】\n", sourceName)
-	for i := 0; i < maxItems; i++ {
-		item := val.Index(i)
-		title := extractTitle(item)
-		if title != "" {
-			content += fmt.Sprintf("%d. %s\n", i+1, title)
-		}
-	}
-
-	return content
-}
-
-func extractTitle(val reflect.Value) string {
-	if val.Kind() == reflect.Ptr {
-		val = val.Elem()
-	}
-	if val.Kind() != reflect.Struct {
-		return ""
-	}
-
-	titleField := val.FieldByName("Title")
-	if titleField.IsValid() && titleField.Kind() == reflect.String {
-		return titleField.String()
-	}
-	return ""
-}
-
-func structToSegments(val reflect.Value) []napcat.MessageSegment {
-	var segments []napcat.MessageSegment
-
-	if val.Kind() == reflect.Ptr {
-		val = val.Elem()
-	}
-
-	if val.Kind() != reflect.Struct {
-		return segments
-	}
-
-	typ := val.Type()
-	for i := 0; i < val.NumField(); i++ {
-		field := typ.Field(i)
-		fieldValue := val.Field(i)
-
-		if !fieldValue.CanInterface() {
-			continue
-		}
-
-		fieldName := field.Name
-
-		if fieldName == "Cover" && fieldValue.Kind() == reflect.String && fieldValue.String() != "" {
-			segments = append(segments, napcat.NewImageSegment(fieldValue.String()))
-			segments = append(segments, napcat.NewTextSegment("\n"))
-			continue
-		}
-
-		if fieldName == "MobileUrl" {
-			continue
-		}
-
-		var valueStr string
-		switch fieldValue.Kind() {
-		case reflect.String:
-			valueStr = fieldValue.String()
-		case reflect.Int, reflect.Int64:
-			valueStr = fmt.Sprintf("%d", fieldValue.Int())
-		case reflect.Float64:
-			valueStr = fmt.Sprintf("%f", fieldValue.Float())
-		default:
-			valueStr = fmt.Sprintf("%v", fieldValue.Interface())
-		}
-
-		segments = append(segments, napcat.NewTextSegment(fmt.Sprintf("%s: %s\n", fieldName, valueStr)))
-	}
-
-	return segments
 }
