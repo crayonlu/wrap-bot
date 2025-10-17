@@ -31,6 +31,8 @@ func main() {
 	plugins.Register(engine, cfg)
 	tasks.RegisterAll(sched, cfg)
 
+	sched.Start()
+
 	log.Printf("Starting bot with NapCat WebSocket: %s", cfg.NapCatWSURL)
 	if err := engine.Run(); err != nil {
 		log.Fatalf("Bot stopped with error: %v", err)
