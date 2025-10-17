@@ -35,12 +35,12 @@ func RssPushPlugin(cfg *config.Config) bot.HandlerFunc {
 			go func() {
 				if err := rssPushService.SendRssPush(); err != nil {
 					log.Printf("RSS push failed: %v", err)
-					ctx.ReplyText("RSS推送失败: " + err.Error())
 				} else {
-					ctx.ReplyText("RSS推送成功！")
+					log.Printf("RSS push succeeded")
 				}
 			}()
 			return
+			
 		}
 		ctx.Next()
 	}

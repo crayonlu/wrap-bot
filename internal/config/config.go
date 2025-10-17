@@ -59,7 +59,7 @@ func Load() *Config {
 		RssPushUsers:       getEnvInt64Slice("RSS_PUSH_USERS", []int64{}),
 		AllowedUsers:       getEnvInt64Slice("ALLOWED_USERS", []int64{}),
 		AllowedGroups:      getEnvInt64Slice("ALLOWED_GROUPS", []int64{}),
-		RSSApiHost:         getEnv("RSS_API_HOST", "https://rsshub.rssforever.com/"),
+		RSSApiHost:         getEnv("RSS_API_HOST", "https://rsshub.rssforever.com"),
 	}
 }
 
