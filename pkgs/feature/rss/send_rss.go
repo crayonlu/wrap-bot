@@ -2,7 +2,10 @@ package rss
 
 import (
 	"fmt"
+	"html"
 	"log"
+	"regexp"
+	"strings"
 
 	"github.com/crayon/bot_golang/internal/config"
 	"github.com/crayon/bot_golang/pkgs/napcat"
@@ -107,7 +110,15 @@ func (rp *RssPush) buildFeedNodes(rss *RSS, botQQ int64) []napcat.ForwardNode {
 		}
 
 		if item.Description != "" {
-			segments = append(segments, napcat.NewTextSegment(fmt.Sprintf("📝 %s\n", item.Description)))
+			if img := extractFirstImageURL(item.Description); img != "" {
+				segments = append(segments, napcat.NewImageSegment(img))
+			}
+
+			descText := stripHTML(item.Description)
+			descText = strings.TrimSpace(descText)
+			if descText != "" {
+				segments = append(segments, napcat.NewTextSegment(fmt.Sprintf("📝 %s\n", descText)))
+			}
 		}
 
 		if item.PubDate != "" {
@@ -125,12 +136,35 @@ func (rp *RssPush) buildFeedNodes(rss *RSS, botQQ int64) []napcat.ForwardNode {
 	return nodes
 }
 
+func extractFirstImageURL(htmlStr string) string {
+	re := regexp.MustCompile(`(?i)<img[^>]+src=["']?([^"' >]+)["' >]`)
+	m := re.FindStringSubmatch(htmlStr)
+	if len(m) >= 2 {
+		return html.UnescapeString(m[1])
+	}
+	return ""
+}
+
+func stripHTML(htmlStr string) string {
+	brRe := regexp.MustCompile(`(?i)<br\s*/?>`)
+	s := brRe.ReplaceAllString(htmlStr, "\n")
+
+	tagRe := regexp.MustCompile(`(?s)<[^>]*>`)
+	s = tagRe.ReplaceAllString(s, "")
+
+	s = html.UnescapeString(s)
+
+	s = strings.ReplaceAll(s, "\r", "")
+	s = regexp.MustCompile(`\n{2,}`).ReplaceAllString(s, "\n\n")
+	return strings.TrimSpace(s)
+}
+
 func (rp *RssPush) formatFeedForAI(rss *RSS) string {
 	content := fmt.Sprintf("【%s】\n", rss.Channel.Title)
 
 	maxItems := len(rss.Channel.Items)
-	if maxItems > 10 {
-		maxItems = 10
+	if maxItems > 5 {
+		maxItems = 5
 	}
 
 	for i := 0; i < maxItems; i++ {
