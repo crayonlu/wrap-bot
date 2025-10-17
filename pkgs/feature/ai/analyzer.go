@@ -11,10 +11,12 @@ func NewAnalyzer(service Service) *Analyzer {
 }
 
 func (a *Analyzer) Analyze(content string) (string, error) {
-	prompt := fmt.Sprintf(`总结今日热点趋势：
+	prompt := fmt.Sprintf(`请分析以下今日技术热点：
 
-%s
+%s`, content)
 
-请分析主要技术趋势和值得关注的热点。`, content)
-	return a.service.Chat("tech_analysis", prompt, false)
+	conversationID := "tech_analysis"
+	a.service.ClearHistory(conversationID)
+
+	return a.service.Chat(conversationID, prompt, true)
 }

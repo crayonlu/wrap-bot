@@ -13,7 +13,10 @@ type Scheduler struct {
 
 func New() *Scheduler {
 	return &Scheduler{
-		cron: cron.New(cron.WithLogger(cron.VerbosePrintfLogger(log.Default()))),
+		cron: cron.New(
+			cron.WithSeconds(),
+			cron.WithLogger(cron.VerbosePrintfLogger(log.Default())),
+		),
 	}
 }
 
