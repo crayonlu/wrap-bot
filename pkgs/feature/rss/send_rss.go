@@ -8,15 +8,21 @@ import (
 	"github.com/crayon/bot_golang/pkgs/napcat"
 )
 
+type AIAnalyzer interface {
+	Analyze(content string) (string, error)
+}
+
 type RssPush struct {
 	cfg        *config.Config
 	rssService *RssService
+	aiService  AIAnalyzer
 }
 
-func NewRssPush(cfg *config.Config) *RssPush {
+func NewRssPush(cfg *config.Config, aiService AIAnalyzer) *RssPush {
 	return &RssPush{
 		cfg:        cfg,
 		rssService: NewRssService(cfg.RSSApiHost),
+		aiService:  aiService,
 	}
 }
 
@@ -73,6 +79,20 @@ func (rp *RssPush) buildForwardNodes(feeds map[string]*RSS, botQQ int64) []napca
 			continue
 		}
 
+		if rp.cfg.AIEnabled && rp.aiService != nil {
+			content := rp.formatFeedForAI(rss)
+			if analysis, err := rp.aiService.Analyze(content); err == nil {
+				aiNode := napcat.NewMixedForwardNode(
+					rss.Channel.Title+" - AI分析",
+					botQQ,
+					napcat.NewTextSegment("📊 "+analysis),
+				)
+				subNodes = append([]napcat.ForwardNode{aiNode}, subNodes...)
+			} else {
+				log.Printf("AI analysis failed for %s: %v", feedID, err)
+			}
+		}
+
 		content := make([]interface{}, len(subNodes))
 		for i, node := range subNodes {
 			content[i] = node
@@ -126,4 +146,20 @@ func (rp *RssPush) buildFeedNodes(rss *RSS, botQQ int64) []napcat.ForwardNode {
 	}
 
 	return nodes
+}
+
+func (rp *RssPush) formatFeedForAI(rss *RSS) string {
+	content := fmt.Sprintf("【%s】\n", rss.Channel.Title)
+
+	maxItems := len(rss.Channel.Items)
+	if maxItems > 10 {
+		maxItems = 10
+	}
+
+	for i := 0; i < maxItems; i++ {
+		item := rss.Channel.Items[i]
+		content += fmt.Sprintf("%d. %s\n", i+1, item.Title)
+	}
+
+	return content
 }

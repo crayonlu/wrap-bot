@@ -5,6 +5,7 @@ import (
 
 	"github.com/crayon/bot_golang/internal/config"
 	scheduler "github.com/crayon/bot_golang/pkgs/feature"
+	"github.com/crayon/bot_golang/pkgs/feature/ai"
 	"github.com/crayon/bot_golang/pkgs/feature/rss"
 )
 
@@ -13,8 +14,24 @@ type RssPushTask struct {
 }
 
 func NewRssPushTask(cfg *config.Config) *RssPushTask {
+	var aiAnalyzer rss.AIAnalyzer
+
+	if cfg.AIEnabled {
+		aiService := ai.NewService(ai.Config{
+			APIURL:           cfg.AIURL,
+			APIKey:           cfg.AIKey,
+			Model:            cfg.AIModel,
+			SystemPromptPath: cfg.AnalyzerPromptPath,
+			MaxHistory:       5,
+			Temperature:      0.7,
+			TopP:             0.9,
+			MaxTokens:        2000,
+		})
+		aiAnalyzer = ai.NewAnalyzer(aiService)
+	}
+
 	return &RssPushTask{
-		service: rss.NewRssPush(cfg),
+		service: rss.NewRssPush(cfg, aiAnalyzer),
 	}
 }
 
