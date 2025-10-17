@@ -15,6 +15,7 @@ type Task interface {
 func RegisterAll(sched *scheduler.Scheduler, cfg *config.Config) {
 	tasks := []Task{
 		NewTechPushTask(cfg),
+		NewRssPushTask(cfg),
 	}
 
 	for _, task := range tasks {

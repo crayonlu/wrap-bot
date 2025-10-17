@@ -1,0 +1,129 @@
+package rss
+
+import (
+	"fmt"
+	"log"
+
+	"github.com/crayon/bot_golang/internal/config"
+	"github.com/crayon/bot_golang/pkgs/napcat"
+)
+
+type RssPush struct {
+	cfg        *config.Config
+	rssService *RssService
+}
+
+func NewRssPush(cfg *config.Config) *RssPush {
+	return &RssPush{
+		cfg:        cfg,
+		rssService: NewRssService(cfg.RSSApiHost),
+	}
+}
+
+func (rp *RssPush) SendRssPush() error {
+	napcatClient := napcat.NewClient(rp.cfg.NapCatHTTPURL, rp.cfg.NapCatHTTPToken)
+
+	loginInfo, err := napcatClient.GetLoginInfo()
+	if err != nil {
+		return fmt.Errorf("failed to get bot login info: %w", err)
+	}
+	botQQ := loginInfo.UserID
+
+	feeds, err := rp.rssService.FetchAllFeeds()
+	if err != nil {
+		return fmt.Errorf("failed to fetch RSS feeds: %w", err)
+	}
+
+	forwardNodes := rp.buildForwardNodes(feeds, botQQ)
+	if len(forwardNodes) == 0 {
+		return fmt.Errorf("no RSS data to send")
+	}
+
+	var sendErr error
+	for _, groupID := range rp.cfg.RssPushGroups {
+		_, err := napcatClient.SendGroupForwardMsg(groupID, forwardNodes)
+		if err != nil {
+			log.Printf("Failed to send RSS to group %d: %v", groupID, err)
+			sendErr = err
+		}
+	}
+
+	for _, userID := range rp.cfg.RssPushUsers {
+		_, err := napcatClient.SendPrivateForwardMsg(userID, forwardNodes)
+		if err != nil {
+			log.Printf("Failed to send RSS to user %d: %v", userID, err)
+			sendErr = err
+		}
+	}
+
+	return sendErr
+}
+
+func (rp *RssPush) buildForwardNodes(feeds map[string]*RSS, botQQ int64) []napcat.ForwardNode {
+	var mainNodes []napcat.ForwardNode
+
+	for feedID, rss := range feeds {
+		if rss.Channel == nil || len(rss.Channel.Items) == 0 {
+			log.Printf("Skipping empty feed: %s", feedID)
+			continue
+		}
+
+		subNodes := rp.buildFeedNodes(rss, botQQ)
+		if len(subNodes) == 0 {
+			continue
+		}
+
+		content := make([]interface{}, len(subNodes))
+		for i, node := range subNodes {
+			content[i] = node
+		}
+
+		mainNode := napcat.ForwardNode{
+			Type: "node",
+			Data: map[string]interface{}{
+				"name":    rss.Channel.Title,
+				"uin":     botQQ,
+				"content": content,
+			},
+		}
+
+		mainNodes = append(mainNodes, mainNode)
+	}
+
+	return mainNodes
+}
+
+func (rp *RssPush) buildFeedNodes(rss *RSS, botQQ int64) []napcat.ForwardNode {
+	var nodes []napcat.ForwardNode
+
+	maxItems := len(rss.Channel.Items)
+	if maxItems > 10 {
+		maxItems = 10
+	}
+
+	for i := 0; i < maxItems; i++ {
+		item := rss.Channel.Items[i]
+
+		segments := []napcat.MessageSegment{
+			napcat.NewTextSegment(fmt.Sprintf("📌 %s\n", item.Title)),
+			napcat.NewTextSegment(fmt.Sprintf("🔗 %s\n", item.Link)),
+		}
+
+		if item.Description != "" {
+			segments = append(segments, napcat.NewTextSegment(fmt.Sprintf("📝 %s\n", item.Description)))
+		}
+
+		if item.PubDate != "" {
+			segments = append(segments, napcat.NewTextSegment(fmt.Sprintf("🕒 %s", item.PubDate)))
+		}
+
+		node := napcat.NewMixedForwardNode(
+			rss.Channel.Title,
+			botQQ,
+			segments...,
+		)
+		nodes = append(nodes, node)
+	}
+
+	return nodes
+}

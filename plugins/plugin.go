@@ -14,4 +14,7 @@ func Register(engine *bot.Engine, cfg *config.Config) {
 	if cfg.HotApiHost != "" && cfg.HotApiKey != "" {
 		engine.Use(TechPushPlugin(cfg))
 	}
+	if cfg.RSSApiHost != "" {
+		engine.Use(RssPushPlugin(cfg))
+	}
 }
