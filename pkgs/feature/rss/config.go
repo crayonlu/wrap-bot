@@ -7,15 +7,19 @@ type RssConfig struct {
 
 var RssConfigs = []RssConfig{
 	{
-		ID:   "Github_trending_typescript",
+		ID:    "Github_trending_typescript",
 		Route: "/github/trending/daily/typescript/en",
 	},
 	{
-		ID:   "Github_trending_go",
+		ID:    "Github_trending_go",
 		Route: "/github/trending/daily/go/en",
 	},
 	{
 		ID:    "Github_trending_javascript",
 		Route: "/github/trending/daily/javascript/en",
+	},
+	{
+		ID: 	 "Github_trending_any",
+		Route: "/github/trending/daily/any/en",
 	},
 }
