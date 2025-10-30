@@ -1,8 +1,8 @@
 package plugins
 
 import (
-	"github.com/crayon/bot_golang/internal/config"
-	"github.com/crayon/bot_golang/pkgs/bot"
+	"github.com/crayon/wrap-bot/internal/config"
+	"github.com/crayon/wrap-bot/pkgs/bot"
 )
 
 func Register(engine *bot.Engine, cfg *config.Config) {

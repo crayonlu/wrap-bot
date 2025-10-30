@@ -1,4 +1,4 @@
-module github.com/crayon/bot_golang
+module github.com/crayon/wrap-bot
 
 go 1.22.2
 

@@ -3,12 +3,12 @@ package main
 import (
 	"log"
 
-	"github.com/crayon/bot_golang/internal/config"
-	"github.com/crayon/bot_golang/internal/tasks"
-	"github.com/crayon/bot_golang/pkgs/bot"
-	scheduler "github.com/crayon/bot_golang/pkgs/feature"
-	"github.com/crayon/bot_golang/pkgs/napcat"
-	"github.com/crayon/bot_golang/plugins"
+	"github.com/crayon/wrap-bot/internal/config"
+	"github.com/crayon/wrap-bot/internal/tasks"
+	"github.com/crayon/wrap-bot/pkgs/bot"
+	scheduler "github.com/crayon/wrap-bot/pkgs/feature"
+	"github.com/crayon/wrap-bot/pkgs/napcat"
+	"github.com/crayon/wrap-bot/plugins"
 )
 
 func main() {

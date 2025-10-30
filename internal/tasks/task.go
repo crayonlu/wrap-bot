@@ -3,8 +3,8 @@ package tasks
 import (
 	"log"
 
-	"github.com/crayon/bot_golang/internal/config"
-	scheduler "github.com/crayon/bot_golang/pkgs/feature"
+	"github.com/crayon/wrap-bot/internal/config"
+	scheduler "github.com/crayon/wrap-bot/pkgs/feature"
 )
 
 type Task interface {

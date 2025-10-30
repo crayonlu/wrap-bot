@@ -1,7 +1,7 @@
 package tech_push
 
 import (
-	"github.com/crayon/bot_golang/pkgs/feature/tech_push/handlers"
+	"github.com/crayon/wrap-bot/pkgs/feature/tech_push/handlers"
 )
 
 type DataSource struct {

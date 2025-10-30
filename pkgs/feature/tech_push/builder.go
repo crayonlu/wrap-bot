@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/crayon/bot_golang/pkgs/napcat"
+	"github.com/crayon/wrap-bot/pkgs/napcat"
 )
 
 func buildGenericNodes(sourceName string, items interface{}, limit int, botQQ int64) []napcat.ForwardNode {

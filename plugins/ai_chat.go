@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/crayon/bot_golang/internal/config"
-	"github.com/crayon/bot_golang/pkgs/bot"
-	"github.com/crayon/bot_golang/pkgs/feature/ai"
+	"github.com/crayon/wrap-bot/internal/config"
+	"github.com/crayon/wrap-bot/pkgs/bot"
+	"github.com/crayon/wrap-bot/pkgs/feature/ai"
 )
 
 func AIChatPlugin(cfg *config.Config) bot.HandlerFunc {

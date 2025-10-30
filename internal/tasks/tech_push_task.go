@@ -3,10 +3,10 @@ package tasks
 import (
 	"log"
 
-	"github.com/crayon/bot_golang/internal/config"
-	scheduler "github.com/crayon/bot_golang/pkgs/feature"
-	"github.com/crayon/bot_golang/pkgs/feature/ai"
-	"github.com/crayon/bot_golang/pkgs/feature/tech_push"
+	"github.com/crayon/wrap-bot/internal/config"
+	scheduler "github.com/crayon/wrap-bot/pkgs/feature"
+	"github.com/crayon/wrap-bot/pkgs/feature/ai"
+	"github.com/crayon/wrap-bot/pkgs/feature/tech_push"
 )
 
 type TechPushTask struct {

@@ -3,10 +3,10 @@ package plugins
 import (
 	"log"
 
-	"github.com/crayon/bot_golang/internal/config"
-	"github.com/crayon/bot_golang/pkgs/bot"
-	"github.com/crayon/bot_golang/pkgs/feature/ai"
-	"github.com/crayon/bot_golang/pkgs/feature/tech_push"
+	"github.com/crayon/wrap-bot/internal/config"
+	"github.com/crayon/wrap-bot/pkgs/bot"
+	"github.com/crayon/wrap-bot/pkgs/feature/ai"
+	"github.com/crayon/wrap-bot/pkgs/feature/tech_push"
 )
 
 var techPushCache = make(map[string][]byte)

@@ -7,8 +7,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/crayon/bot_golang/internal/config"
-	"github.com/crayon/bot_golang/pkgs/napcat"
+	"github.com/crayon/wrap-bot/internal/config"
+	"github.com/crayon/wrap-bot/pkgs/napcat"
 )
 
 type AIAnalyzer interface {

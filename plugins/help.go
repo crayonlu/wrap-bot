@@ -1,8 +1,8 @@
 package plugins
 
 import (
-	"github.com/crayon/bot_golang/internal/config"
-	"github.com/crayon/bot_golang/pkgs/bot"
+	"github.com/crayon/wrap-bot/internal/config"
+	"github.com/crayon/wrap-bot/pkgs/bot"
 )
 
 func HelpPlugin(cfg *config.Config) bot.HandlerFunc {
@@ -11,7 +11,7 @@ func HelpPlugin(cfg *config.Config) bot.HandlerFunc {
 /ping - Check if bot is alive
 /echo <message> - Echo your message
 /help - Show this help message`
-		
+
 		ctx.ReplyText(help)
 	})
 }

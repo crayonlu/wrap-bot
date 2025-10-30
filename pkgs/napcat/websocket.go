@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/crayon/bot_golang/pkgs/bot"
+	"github.com/crayon/wrap-bot/pkgs/bot"
 	"github.com/gorilla/websocket"
 )
 
@@ -40,17 +40,17 @@ func (ws *WSClient) connect() error {
 	if ws.token != "" {
 		header.Set("Authorization", "Bearer "+ws.token)
 	}
-	
+
 	conn, _, err := websocket.DefaultDialer.Dial(ws.url, header)
 	if err != nil {
 		return fmt.Errorf("failed to connect to websocket: %w", err)
 	}
-	
+
 	ws.mu.Lock()
 	ws.conn = conn
 	ws.connected = true
 	ws.mu.Unlock()
-	
+
 	log.Printf("WebSocket connected to %s", ws.url)
 	return nil
 }
@@ -59,9 +59,9 @@ func (ws *WSClient) Start(eventChan chan<- *bot.Event) error {
 	if err := ws.connect(); err != nil {
 		return err
 	}
-	
+
 	go ws.heartbeat()
-	
+
 	for {
 		select {
 		case <-ws.done:
@@ -75,13 +75,13 @@ func (ws *WSClient) Start(eventChan chan<- *bot.Event) error {
 				}
 				continue
 			}
-			
+
 			var event bot.Event
 			if err := json.Unmarshal(message, &event); err != nil {
 				log.Printf("Failed to unmarshal event: %v", err)
 				continue
 			}
-			
+
 			select {
 			case eventChan <- &event:
 			case <-ws.done:
@@ -98,7 +98,7 @@ func (ws *WSClient) reconnect() error {
 		ws.conn.Close()
 	}
 	ws.mu.Unlock()
-	
+
 	for i := 0; i < 10; i++ {
 		log.Printf("Attempting to reconnect... (attempt %d/10)", i+1)
 		if err := ws.connect(); err == nil {
@@ -107,14 +107,14 @@ func (ws *WSClient) reconnect() error {
 		}
 		time.Sleep(time.Second * time.Duration(i+1))
 	}
-	
+
 	return fmt.Errorf("failed to reconnect after 10 attempts")
 }
 
 func (ws *WSClient) heartbeat() {
 	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
-	
+
 	for {
 		select {
 		case <-ticker.C:
@@ -134,14 +134,14 @@ func (ws *WSClient) heartbeat() {
 
 func (ws *WSClient) Close() error {
 	close(ws.done)
-	
+
 	ws.mu.Lock()
 	defer ws.mu.Unlock()
-	
+
 	if ws.conn != nil {
 		ws.connected = false
 		return ws.conn.Close()
 	}
-	
+
 	return nil
 }

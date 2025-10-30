@@ -3,10 +3,10 @@ package plugins
 import (
 	"log"
 
-	"github.com/crayon/bot_golang/internal/config"
-	"github.com/crayon/bot_golang/pkgs/bot"
-	"github.com/crayon/bot_golang/pkgs/feature/ai"
-	"github.com/crayon/bot_golang/pkgs/feature/rss"
+	"github.com/crayon/wrap-bot/internal/config"
+	"github.com/crayon/wrap-bot/pkgs/bot"
+	"github.com/crayon/wrap-bot/pkgs/feature/ai"
+	"github.com/crayon/wrap-bot/pkgs/feature/rss"
 )
 
 var rssPushService *rss.RssPush
@@ -40,7 +40,7 @@ func RssPushPlugin(cfg *config.Config) bot.HandlerFunc {
 				}
 			}()
 			return
-			
+
 		}
 		ctx.Next()
 	}
