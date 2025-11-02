@@ -18,8 +18,4 @@ var RssConfigs = []RssConfig{
 		ID:    "Github_trending_javascript",
 		Route: "/github/trending/daily/javascript/en",
 	},
-	{
-		ID: 	 "Github_trending_any",
-		Route: "/github/trending/daily/any/en",
-	},
 }

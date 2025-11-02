@@ -1,0 +1,113 @@
+@import './variables.less';
+
+.sidebar {
+  &__overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 40;
+
+    @media (min-width: 1024px) {
+      display: none;
+    }
+  }
+
+  &__container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 16rem;
+    background: @color-bg-secondary;
+    border-right: 1px solid @color-border-light;
+    box-shadow: @shadow-lg;
+    z-index: 50;
+    transition: transform @transition-base;
+
+    &--open {
+      transform: translateX(0);
+    }
+
+    &--closed {
+      transform: translateX(-100%);
+    }
+  }
+
+  &__header {
+    padding: @spacing-lg;
+    border-bottom: 1px solid @color-border-light;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: @color-primary;
+    margin: 0;
+  }
+
+  &__close {
+    padding: @spacing-sm;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    border-radius: @radius-md;
+    transition: background @transition-fast;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:hover {
+      background: @color-bg-primary;
+    }
+
+    svg {
+      width: 1.25rem;
+      height: 1.25rem;
+      color: @color-primary;
+    }
+
+    @media (min-width: 1024px) {
+      display: none;
+    }
+  }
+
+  &__nav {
+    padding: @spacing-md;
+    display: flex;
+    flex-direction: column;
+    gap: @spacing-sm;
+  }
+
+  &__link {
+    display: flex;
+    align-items: center;
+    gap: @spacing-md;
+    padding: @spacing-md @spacing-lg;
+    border-radius: @radius-md;
+    text-decoration: none;
+    color: @color-text-primary;
+    font-weight: 500;
+    transition: all @transition-fast;
+
+    svg {
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+
+    &:hover {
+      background: @color-bg-primary;
+    }
+
+    &--active {
+      background: @color-primary;
+      color: white;
+
+      &:hover {
+        background: @color-primary-hover;
+      }
+    }
+  }
+}

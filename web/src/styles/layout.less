@@ -1,0 +1,25 @@
+@import './variables.less';
+
+.main-layout {
+  min-height: 100vh;
+  background: @color-bg-primary;
+  position: relative;
+
+  &__content {
+    position: absolute;
+    inset: 0;
+    transition: left @transition-base;
+
+    &--sidebar-open {
+      left: 16rem;
+    }
+
+    &--sidebar-closed {
+      left: 0;
+    }
+  }
+
+  &__main {
+    padding: @spacing-2xl;
+  }
+}

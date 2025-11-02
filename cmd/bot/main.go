@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 
+	"github.com/crayon/wrap-bot/internal/admin"
 	"github.com/crayon/wrap-bot/internal/config"
 	"github.com/crayon/wrap-bot/internal/tasks"
 	"github.com/crayon/wrap-bot/pkgs/bot"
@@ -32,6 +33,11 @@ func main() {
 	tasks.RegisterAll(sched, cfg)
 
 	sched.Start()
+
+	if cfg.ServerEnabled {
+		log.Printf("Starting admin server on port %s", cfg.ServerPort)
+		admin.StartServer(cfg.ServerPort)
+	}
 
 	log.Printf("Starting bot with NapCat WebSocket: %s", cfg.NapCatWSURL)
 	if err := engine.Run(); err != nil {
