@@ -27,6 +27,11 @@ type ConfigUpdate struct {
 	Value string `json:"value"`
 }
 
+type ConfigItem struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
 type LogEntry struct {
 	Timestamp string `json:"timestamp"`
 	Level     string `json:"level"`

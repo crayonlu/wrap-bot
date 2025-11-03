@@ -50,13 +50,17 @@ func (t *RssPushTask) Schedule(sched *scheduler.Scheduler, cfg *config.Config) e
 		return nil
 	}
 
-	_, err := sched.At(13, 0, 0).WithID(t.Name()).Do(func() {
+	entryID, err := sched.At(13, 0, 0).WithID(t.Name()).Do(func() {
 		if err := t.service.SendRssPush(); err != nil {
 			log.Printf("[Rss Push]RssPushTask execution failed: %v", err)
 		} else {
 			log.Println("[Rss Push]RssPushTask executed successfully")
 		}
 	})
+
+	if err == nil {
+		sched.RegisterTask(t.Name(), "RSS Daily Push", "0 0 13 * * *", entryID)
+	}
 
 	return err
 }

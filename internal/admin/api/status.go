@@ -2,22 +2,19 @@ package api
 
 import (
 	"net/http"
-	"runtime"
-	"time"
 
-	"github.com/crayon/wrap-bot/internal/admin/types"
+	"github.com/crayon/wrap-bot/internal/shared"
 	"github.com/labstack/echo/v4"
 )
 
-var startTime = time.Now()
-
 func GetStatus(c echo.Context) error {
-	uptime := time.Since(startTime).Seconds()
-	status := types.BotStatus{
-		Running:   true,
-		Uptime:    int64(uptime),
-		Version:   "1.0.0",
-		GoVersion: runtime.Version(),
+	ctx := shared.GetAdminContext()
+	if ctx == nil || ctx.Engine == nil {
+		return c.JSON(http.StatusServiceUnavailable, map[string]string{
+			"error": "Engine not available",
+		})
 	}
+
+	status := ctx.Engine.GetStatus()
 	return c.JSON(http.StatusOK, status)
 }

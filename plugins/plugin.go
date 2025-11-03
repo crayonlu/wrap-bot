@@ -6,15 +6,17 @@ import (
 )
 
 func Register(engine *bot.Engine, cfg *config.Config) {
-	engine.Use(PingPlugin(cfg))
-	engine.Use(EchoPlugin(cfg))
+	engine.RegisterPlugin("ping", "Simple ping-pong command", PingPlugin(cfg))
+	engine.RegisterPlugin("echo", "Echo back user messages", EchoPlugin(cfg))
+	engine.RegisterPlugin("help", "Show available commands", HelpPlugin(cfg))
+
 	if cfg.AIEnabled {
-		engine.Use(AIChatPlugin(cfg))
+		engine.RegisterPlugin("ai_chat", "AI conversation plugin", AIChatPlugin(cfg))
 	}
 	if cfg.HotApiHost != "" && cfg.HotApiKey != "" {
-		engine.Use(TechPushPlugin(cfg))
+		engine.RegisterPlugin("tech_push", "Tech news push service", TechPushPlugin(cfg))
 	}
 	if cfg.RSSApiHost != "" {
-		engine.Use(RssPushPlugin(cfg))
+		engine.RegisterPlugin("rss_push", "RSS feed push service", RssPushPlugin(cfg))
 	}
 }

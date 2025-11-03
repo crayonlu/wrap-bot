@@ -10,15 +10,24 @@ import (
 )
 
 func GetConfig(c echo.Context) error {
-	config := map[string]string{
-		"AI_ENABLED":      os.Getenv("AI_ENABLED"),
-		"AI_URL":          os.Getenv("AI_URL"),
-		"AI_MODEL":        os.Getenv("AI_MODEL"),
-		"HOT_API_HOST":    os.Getenv("HOT_API_HOST"),
-		"RSS_API_HOST":    os.Getenv("RSS_API_HOST"),
-		"NAPCAT_HTTP_URL": os.Getenv("NAPCAT_HTTP_URL"),
-		"NAPCAT_WS_URL":   os.Getenv("NAPCAT_WS_URL"),
+	configKeys := []string{
+		"AI_ENABLED",
+		"AI_URL",
+		"AI_MODEL",
+		"HOT_API_HOST",
+		"RSS_API_HOST",
+		"NAPCAT_HTTP_URL",
+		"NAPCAT_WS_URL",
 	}
+
+	config := make([]types.ConfigItem, 0, len(configKeys))
+	for _, key := range configKeys {
+		config = append(config, types.ConfigItem{
+			Key:   key,
+			Value: os.Getenv(key),
+		})
+	}
+
 	return c.JSON(http.StatusOK, config)
 }
 

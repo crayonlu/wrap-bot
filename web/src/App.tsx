@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { useAuthStore } from './stores/auth'
+import { useWebSocket } from './lib/hooks/useWebSocket'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import PluginsPage from './pages/PluginsPage'
@@ -11,6 +12,7 @@ import MainLayout from './components/layout/MainLayout'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+  useWebSocket()
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />
 }
 

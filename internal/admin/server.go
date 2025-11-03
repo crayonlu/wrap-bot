@@ -5,6 +5,8 @@ import (
 
 	"github.com/crayon/wrap-bot/internal/admin/api"
 	"github.com/crayon/wrap-bot/internal/admin/middleware"
+	adminws "github.com/crayon/wrap-bot/internal/admin/websocket"
+	"github.com/crayon/wrap-bot/internal/shared"
 	"github.com/labstack/echo/v4"
 	echomiddleware "github.com/labstack/echo/v4/middleware"
 )
@@ -29,6 +31,11 @@ func StartServer(port string) *echo.Echo {
 	admin.GET("/config", api.GetConfig)
 	admin.POST("/config", api.UpdateConfig)
 	admin.GET("/logs", api.GetLogs)
+
+	ctx := shared.GetAdminContext()
+	if ctx != nil && ctx.WSHub != nil {
+		admin.GET("/ws", adminws.HandleWebSocket(ctx.WSHub))
+	}
 
 	serveStaticFiles(e)
 

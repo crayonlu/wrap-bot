@@ -60,7 +60,7 @@ export default function ConfigPage() {
 
       <div className="logs__container">
         <div className="logs__list">
-          {displayConfig.map((item) => (
+          {displayConfig?.map((item) => (
             <div key={item.key} className="logs__item">
               <div className="logs__item-content">
                 <div className="dashboard__icon">
@@ -83,6 +83,11 @@ export default function ConfigPage() {
               </div>
             </div>
           ))}
+          {(!displayConfig || displayConfig.length === 0) && (
+            <div className="logs__item">
+              <p style={{textAlign: 'center', color: '#666'}}>No configuration items available</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -3,12 +3,22 @@ package scheduler
 import (
 	"fmt"
 	"log"
+	"sync"
 
 	"github.com/robfig/cron/v3"
 )
 
+type TaskInfo struct {
+	ID       string
+	Name     string
+	Schedule string
+	EntryID  cron.EntryID
+}
+
 type Scheduler struct {
-	cron *cron.Cron
+	cron  *cron.Cron
+	tasks map[string]*TaskInfo
+	mu    sync.RWMutex
 }
 
 func New() *Scheduler {
@@ -17,6 +27,7 @@ func New() *Scheduler {
 			cron.WithSeconds(),
 			cron.WithLogger(cron.VerbosePrintfLogger(log.Default())),
 		),
+		tasks: make(map[string]*TaskInfo),
 	}
 }
 
@@ -57,4 +68,48 @@ func (ttb *TimeTaskBuilder) Do(fn func()) (cron.EntryID, error) {
 
 func cronSpec(hour, minute, second int) string {
 	return fmt.Sprintf("%d %d %d * * *", second, minute, hour)
+}
+
+func (s *Scheduler) RegisterTask(id, name, schedule string, entryID cron.EntryID) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.tasks[id] = &TaskInfo{
+		ID:       id,
+		Name:     name,
+		Schedule: schedule,
+		EntryID:  entryID,
+	}
+}
+
+func (s *Scheduler) GetTasks() map[string]*TaskInfo {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	result := make(map[string]*TaskInfo)
+	for k, v := range s.tasks {
+		result[k] = v
+	}
+	return result
+}
+
+func (s *Scheduler) GetCronEntries() map[cron.EntryID]cron.Entry {
+	entries := make(map[cron.EntryID]cron.Entry)
+	for _, entry := range s.cron.Entries() {
+		entries[entry.ID] = entry
+	}
+	return entries
+}
+
+func (s *Scheduler) TriggerTask(id string) bool {
+	s.mu.RLock()
+	task, exists := s.tasks[id]
+	s.mu.RUnlock()
+	if !exists {
+		return false
+	}
+	entry := s.cron.Entry(task.EntryID)
+	if entry.ID == 0 {
+		return false
+	}
+	go entry.Job.Run()
+	return true
 }

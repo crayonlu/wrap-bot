@@ -3,25 +3,47 @@ package bot
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
+	"runtime"
 	"sync"
 	"syscall"
+	"time"
+
+	"github.com/crayon/wrap-bot/pkgs/logger"
 )
 
 type HandlerFunc func(ctx *Context)
 
 type Engine struct {
-	handlers      []HandlerFunc
-	mu            sync.RWMutex
-	eventChan     chan *Event
-	ctx           context.Context
-	cancel        context.CancelFunc
-	wsClient      WebSocketClient
-	apiClient     APIClient
-	maxWorkers    int
-	workerPool    chan struct{}
+	handlers   []HandlerFunc
+	mu         sync.RWMutex
+	eventChan  chan *Event
+	ctx        context.Context
+	cancel     context.CancelFunc
+	wsClient   WebSocketClient
+	apiClient  APIClient
+	maxWorkers int
+	workerPool chan struct{}
+	plugins    map[string]*PluginInfo
+	pluginsMu  sync.RWMutex
+	startTime  time.Time
+}
+
+type BotStatus struct {
+	Running   bool   `json:"running"`
+	Uptime    int64  `json:"uptime"`
+	Version   string `json:"version"`
+	GoVersion string `json:"go_version"`
+}
+
+type PluginInfo struct {
+	Name        string
+	Description string
+	Enabled     bool
+	Handler     HandlerFunc
 }
 
 type WebSocketClient interface {
@@ -70,13 +92,28 @@ type Friend struct {
 
 func New() *Engine {
 	ctx, cancel := context.WithCancel(context.Background())
-	return &Engine{
+	e := &Engine{
 		handlers:   make([]HandlerFunc, 0),
 		eventChan:  make(chan *Event, 100),
 		ctx:        ctx,
 		cancel:     cancel,
-		maxWorkers: 100,
-		workerPool: make(chan struct{}, 100),
+		maxWorkers: 10,
+		workerPool: make(chan struct{}, 10),
+		plugins:    make(map[string]*PluginInfo),
+		startTime:  time.Now(),
+	}
+
+	logger.Info("Bot engine initialized")
+	return e
+}
+
+func (e *Engine) GetStatus() *BotStatus {
+	uptime := time.Since(e.startTime).Seconds()
+	return &BotStatus{
+		Running:   e.ctx.Err() == nil,
+		Uptime:    int64(uptime),
+		Version:   "1.0.0",
+		GoVersion: runtime.Version(),
 	}
 }
 
@@ -110,6 +147,7 @@ func (e *Engine) handleEvent(event *Event) {
 		defer func() {
 			<-e.workerPool
 			if err := recover(); err != nil {
+				logger.Error(fmt.Sprintf("Panic recovered in event handler: %v", err))
 				log.Printf("Panic recovered in event handler: %v", err)
 			}
 		}()
@@ -131,6 +169,7 @@ func (e *Engine) Run() error {
 
 	go func() {
 		if err := e.wsClient.Start(e.eventChan); err != nil {
+			logger.Error(fmt.Sprintf("WebSocket client error: %v", err))
 			log.Printf("WebSocket client error: %v", err)
 			e.cancel()
 		}
@@ -183,4 +222,50 @@ type BotError struct {
 
 func (e *BotError) Error() string {
 	return e.Code + ": " + e.Message
+}
+
+func (e *Engine) RegisterPlugin(name, description string, handler HandlerFunc) {
+	e.pluginsMu.Lock()
+	defer e.pluginsMu.Unlock()
+	e.plugins[name] = &PluginInfo{
+		Name:        name,
+		Description: description,
+		Enabled:     true,
+		Handler:     handler,
+	}
+	e.Use(handler)
+	e.broadcastPlugins()
+}
+
+func (e *Engine) GetPlugins() map[string]*PluginInfo {
+	e.pluginsMu.RLock()
+	defer e.pluginsMu.RUnlock()
+	result := make(map[string]*PluginInfo)
+	for k, v := range e.plugins {
+		result[k] = v
+	}
+	return result
+}
+
+func (e *Engine) TogglePlugin(name string) bool {
+	e.pluginsMu.Lock()
+	defer e.pluginsMu.Unlock()
+	if plugin, exists := e.plugins[name]; exists {
+		plugin.Enabled = !plugin.Enabled
+		e.broadcastPlugins()
+		return true
+	}
+	return false
+}
+
+func (e *Engine) IsPluginEnabled(name string) bool {
+	e.pluginsMu.RLock()
+	defer e.pluginsMu.RUnlock()
+	if plugin, exists := e.plugins[name]; exists {
+		return plugin.Enabled
+	}
+	return false
+}
+
+func (e *Engine) broadcastPlugins() {
 }

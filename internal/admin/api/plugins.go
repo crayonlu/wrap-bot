@@ -4,37 +4,53 @@ import (
 	"net/http"
 
 	"github.com/crayon/wrap-bot/internal/admin/types"
+	"github.com/crayon/wrap-bot/internal/shared"
 	"github.com/labstack/echo/v4"
 )
 
-var pluginsState = map[string]bool{
-	"ai_chat":   true,
-	"tech_push": true,
-	"rss_push":  true,
-	"ping":      true,
-	"echo":      true,
-}
-
 func GetPlugins(c echo.Context) error {
+	ctx := shared.GetAdminContext()
+	if ctx == nil || ctx.Engine == nil {
+		return c.JSON(http.StatusServiceUnavailable, map[string]string{"error": "engine not available"})
+	}
+
+	pluginsMap := ctx.Engine.GetPlugins()
 	plugins := []types.PluginStatus{}
-	for name, enabled := range pluginsState {
+	for name, info := range pluginsMap {
 		plugins = append(plugins, types.PluginStatus{
 			Name:    name,
-			Enabled: enabled,
+			Enabled: info.Enabled,
 		})
 	}
 	return c.JSON(http.StatusOK, plugins)
 }
 
 func TogglePlugin(c echo.Context) error {
+	ctx := shared.GetAdminContext()
+	if ctx == nil || ctx.Engine == nil {
+		return c.JSON(http.StatusServiceUnavailable, map[string]string{"error": "engine not available"})
+	}
+
 	name := c.Param("name")
-	if _, exists := pluginsState[name]; !exists {
+	if !ctx.Engine.TogglePlugin(name) {
 		return c.JSON(http.StatusNotFound, map[string]string{"error": "plugin not found"})
 	}
 
-	pluginsState[name] = !pluginsState[name]
+	if ctx.WSHub != nil {
+		pluginsMap := ctx.Engine.GetPlugins()
+		plugins := []types.PluginStatus{}
+		for name, info := range pluginsMap {
+			plugins = append(plugins, types.PluginStatus{
+				Name:    name,
+				Enabled: info.Enabled,
+			})
+		}
+		ctx.WSHub.BroadcastPlugins(plugins)
+	}
+
+	enabled := ctx.Engine.IsPluginEnabled(name)
 	return c.JSON(http.StatusOK, types.PluginStatus{
 		Name:    name,
-		Enabled: pluginsState[name],
+		Enabled: enabled,
 	})
 }

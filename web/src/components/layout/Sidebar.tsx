@@ -20,7 +20,7 @@ export default function Sidebar() {
       )}
       <aside className={`sidebar__container ${sidebarOpen ? 'sidebar__container--open' : 'sidebar__container--closed'}`}>
         <div className="sidebar__header">
-          <h2 className="sidebar__title">Bot Admin</h2>
+          <h2 className="sidebar__title">Wrap Bot</h2>
           <button onClick={() => setSidebarOpen(false)} className="sidebar__close">
             <X />
           </button>

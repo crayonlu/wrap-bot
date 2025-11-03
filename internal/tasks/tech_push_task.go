@@ -52,13 +52,17 @@ func (t *TechPushTask) Schedule(sched *scheduler.Scheduler, cfg *config.Config) 
 		return nil
 	}
 
-	_, err := sched.At(12, 0, 0).WithID(t.Name()).Do(func() {
+	entryID, err := sched.At(12, 0, 0).WithID(t.Name()).Do(func() {
 		if err := t.service.SendTechPush(t.cache); err != nil {
 			log.Printf("TechPushTask execution failed: %v", err)
 		} else {
 			log.Println("TechPushTask executed successfully")
 		}
 	})
+
+	if err == nil {
+		sched.RegisterTask(t.Name(), "Tech Push Daily", "0 0 12 * * *", entryID)
+	}
 
 	return err
 }

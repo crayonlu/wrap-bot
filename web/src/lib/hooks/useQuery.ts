@@ -8,7 +8,7 @@ export const useStatus = () => {
       const response = await statusAPI.get()
       return response.data
     },
-    refetchInterval: 5000,
+    refetchOnWindowFocus: false,
   })
 }
 
