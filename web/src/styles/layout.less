@@ -1,25 +1,42 @@
 @import './variables.less';
 
 .main-layout {
-  min-height: 100vh;
+  height: 100dvh;
   background: @color-bg-primary;
   position: relative;
+  overflow: hidden;
 
   &__content {
     position: absolute;
     inset: 0;
-    transition: left @transition-base;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 
-    &--sidebar-open {
-      left: 16rem;
+    @media (min-width: 1024px) {
+      transition: left @transition-base;
+
+      &--sidebar-open {
+        left: 16rem;
+      }
+
+      &--sidebar-closed {
+        left: 0;
+      }
     }
 
-    &--sidebar-closed {
-      left: 0;
+    @media (max-width: 1023px) {
+      left: 0 !important;
     }
   }
 
   &__main {
     padding: @spacing-2xl;
+    flex: 1;
+    overflow-y: auto;
+
+    @media (max-width: 768px) {
+      padding: @spacing-md;
+    }
   }
 }
