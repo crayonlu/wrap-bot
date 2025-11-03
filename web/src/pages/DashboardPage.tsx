@@ -28,7 +28,7 @@ export default function DashboardPage() {
             <div>
               <p className="text-sm text-gray-600">Status</p>
               <p className="text-2xl font-bold text-[#8B7355]">
-                {status?.online ? 'Online' : 'Offline'}
+                {status?.running ? 'Running' : 'Stopped'}
               </p>
             </div>
           </div>
@@ -40,9 +40,9 @@ export default function DashboardPage() {
               <MessageSquare className="w-6 h-6 text-[#8B7355]" />
             </div>
             <div>
-              <p className="text-sm text-gray-600">Messages Received</p>
+              <p className="text-sm text-gray-600">Uptime (seconds)</p>
               <p className="text-2xl font-bold text-[#8B7355]">
-                {status?.stats.message_received || 0}
+                {status?.uptime || 0}
               </p>
             </div>
           </div>
@@ -54,26 +54,26 @@ export default function DashboardPage() {
               <Send className="w-6 h-6 text-[#8B7355]" />
             </div>
             <div>
-              <p className="text-sm text-gray-600">Messages Sent</p>
+              <p className="text-sm text-gray-600">Version</p>
               <p className="text-2xl font-bold text-[#8B7355]">
-                {status?.stats.message_sent || 0}
+                {status?.version || 'N/A'}
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      {status?.account && (
+      {status && (
         <div className="bg-white rounded-xl shadow-sm border border-[#EBE6DF] p-6">
-          <h2 className="text-xl font-semibold text-[#8B7355] mb-4">Account Info</h2>
+          <h2 className="text-xl font-semibold text-[#8B7355] mb-4">System Info</h2>
           <div className="space-y-2">
             <div className="flex justify-between">
-              <span className="text-gray-600">Nickname:</span>
-              <span className="font-medium text-[#8B7355]">{status.account.nickname}</span>
+              <span className="text-gray-600">Go Version:</span>
+              <span className="font-medium text-[#8B7355]">{status.go_version}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">User ID:</span>
-              <span className="font-medium text-[#8B7355]">{status.account.user_id}</span>
+              <span className="text-gray-600">Bot Version:</span>
+              <span className="font-medium text-[#8B7355]">{status.version}</span>
             </div>
           </div>
         </div>

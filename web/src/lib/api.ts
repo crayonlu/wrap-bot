@@ -31,6 +31,7 @@ api.interceptors.response.use(
 )
 
 export interface LoginRequest {
+  username: string
   password: string
 }
 
@@ -39,32 +40,28 @@ export interface LoginResponse {
 }
 
 export interface BotStatus {
-  online: boolean
-  account: {
-    user_id: number
-    nickname: string
-  }
-  stats: {
-    message_sent: number
-    message_received: number
-  }
+  running: boolean
+  uptime: number
+  version: string
+  go_version: string
 }
 
 export interface Plugin {
   name: string
-  description: string
   enabled: boolean
+  description?: string
   commands?: string[]
 }
 
 export interface Task {
   id: string
   name: string
-  description: string
   schedule: string
-  last_run?: string
-  next_run?: string
-  status: 'running' | 'idle' | 'failed'
+  next_run: string
+  last_run: string
+  status: string
+  can_trigger: boolean
+  description?: string
 }
 
 export interface ConfigItem {
@@ -75,7 +72,7 @@ export interface ConfigItem {
 
 export interface LogEntry {
   timestamp: string
-  level: 'info' | 'warn' | 'error' | 'debug'
+  level: string
   message: string
   context?: Record<string, unknown>
 }

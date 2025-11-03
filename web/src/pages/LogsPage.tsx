@@ -2,14 +2,16 @@ import { useState } from 'react'
 import { useLogs } from '../lib/hooks/useQuery'
 import { AlertCircle, Info, AlertTriangle } from 'lucide-react'
 
-const levelIcons = {
+type LogLevel = 'error' | 'warn' | 'info' | 'debug'
+
+const levelIcons: Record<LogLevel, typeof AlertCircle> = {
   error: AlertCircle,
   warn: AlertTriangle,
   info: Info,
   debug: Info,
 }
 
-const levelColors = {
+const levelColors: Record<LogLevel, string> = {
   error: 'text-red-600 bg-red-50',
   warn: 'text-yellow-600 bg-yellow-50',
   info: 'text-blue-600 bg-blue-50',
@@ -67,11 +69,12 @@ export default function LogsPage() {
       <div className="bg-white rounded-xl shadow-sm border border-[#EBE6DF] overflow-hidden">
         <div className="divide-y divide-[#EBE6DF] max-h-[600px] overflow-y-auto">
           {logs?.map((log, index) => {
-            const Icon = levelIcons[log.level]
+            const level = (log.level || 'info') as LogLevel
+            const Icon = levelIcons[level]
             return (
               <div key={index} className="p-4 hover:bg-[#FAF8F5] transition-colors">
                 <div className="flex items-start gap-3">
-                  <div className={`p-2 rounded-lg ${levelColors[log.level]}`}>
+                  <div className={`p-2 rounded-lg ${levelColors[level]}`}>
                     <Icon className="w-4 h-4" />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -79,8 +82,8 @@ export default function LogsPage() {
                       <span className="text-xs text-gray-500">
                         {new Date(log.timestamp).toLocaleString()}
                       </span>
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${levelColors[log.level]}`}>
-                        {log.level.toUpperCase()}
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${levelColors[level]}`}>
+                        {level.toUpperCase()}
                       </span>
                     </div>
                     <p className="text-sm text-gray-800 font-mono">{log.message}</p>
