@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"os"
 
 	"github.com/crayon/wrap-bot/internal/admin/middleware"
 	"github.com/labstack/echo/v4"
@@ -22,7 +23,13 @@ func Login(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request"})
 	}
 
-	if req.Username == "admin" && req.Password == "admin" {
+	adminUsername := os.Getenv("ADMIN_USERNAME")
+	if adminUsername == "" {
+		adminUsername = "admin"
+	}
+	adminPassword := os.Getenv("ADMIN_PASSWORD")
+
+	if req.Username == adminUsername && req.Password == adminPassword {
 		token, err := middleware.GenerateToken(req.Username)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to generate token"})

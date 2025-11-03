@@ -1,4 +1,14 @@
-FROM golang:1.23.3-alpine AS builder
+FROM node:20-alpine AS frontend-builder
+
+WORKDIR /web
+
+COPY web/package.json web/pnpm-lock.yaml ./
+RUN npm install -g pnpm && pnpm install
+
+COPY web/ ./
+RUN pnpm run build
+
+FROM golang:1.23.3-alpine AS backend-builder
 
 WORKDIR /build
 
@@ -6,6 +16,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
+COPY --from=frontend-builder /web/dist ./web/dist
 
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-s -w' -o bot cmd/bot/main.go
 
@@ -15,7 +26,8 @@ RUN apk --no-cache add ca-certificates tzdata
 
 WORKDIR /app
 
-COPY --from=builder /build/bot .
+COPY --from=backend-builder /build/bot .
+COPY --from=backend-builder /build/web/dist ./web/dist
 
 ENV TZ=Asia/Shanghai
 

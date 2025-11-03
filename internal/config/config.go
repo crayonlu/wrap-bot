@@ -32,6 +32,9 @@ type Config struct {
 	AllowedUsers       []int64
 	AllowedGroups      []int64
 	RSSApiHost         string
+	AdminUsername      string
+	AdminPassword      string
+	JWTSecret          string
 }
 
 func Load() *Config {
@@ -60,6 +63,9 @@ func Load() *Config {
 		AllowedUsers:       getEnvInt64Slice("ALLOWED_USERS", []int64{}),
 		AllowedGroups:      getEnvInt64Slice("ALLOWED_GROUPS", []int64{}),
 		RSSApiHost:         getEnv("RSS_API_HOST", "https://rsshub.rssforever.com"),
+		AdminUsername:      getEnv("ADMIN_USERNAME", "admin"),
+		AdminPassword:      getEnv("ADMIN_PASSWORD", ""),
+		JWTSecret:          getEnv("JWT_SECRET", ""),
 	}
 }
 

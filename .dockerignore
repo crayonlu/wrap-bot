@@ -3,6 +3,17 @@
 .gitignore
 .env
 .env.example
+.env.local
 *.md
+!README.md
+docs/
 build/
+dist/
 *.log
+node_modules/
+vendor/
+.vscode/
+.idea/
+*.swp
+.DS_Store
+data/

@@ -1,6 +1,8 @@
 package admin
 
 import (
+	"os"
+
 	"github.com/crayon/wrap-bot/internal/admin/api"
 	"github.com/crayon/wrap-bot/internal/admin/middleware"
 	"github.com/labstack/echo/v4"
@@ -28,6 +30,30 @@ func StartServer(port string) *echo.Echo {
 	admin.POST("/config", api.UpdateConfig)
 	admin.GET("/logs", api.GetLogs)
 
+	serveStaticFiles(e)
+
 	go e.Start(":" + port)
 	return e
+}
+
+func serveStaticFiles(e *echo.Echo) {
+	distPath := "web/dist"
+	if _, err := os.Stat(distPath); os.IsNotExist(err) {
+		e.Logger.Warn("web/dist not found, skipping static file serving")
+		return
+	}
+
+	e.Static("/assets", distPath+"/assets")
+
+	e.GET("/*", func(c echo.Context) error {
+		if len(c.Path()) >= 4 && c.Path()[:4] == "/api" {
+			return echo.ErrNotFound
+		}
+
+		indexPath := distPath + "/index.html"
+		if _, err := os.Stat(indexPath); err == nil {
+			return c.File(indexPath)
+		}
+		return echo.ErrNotFound
+	})
 }
