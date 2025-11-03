@@ -114,22 +114,27 @@ func (l *Logger) SetBroadcastFunc(fn func(LogEntry)) {
 }
 
 func Info(message string) {
+	log.Println(message)
 	globalLogger.Info(message)
 }
 
 func Warn(message string) {
+	log.Println(message)
 	globalLogger.Warn(message)
 }
 
 func Error(message string) {
+	log.Println(message)
 	globalLogger.Error(message)
 }
 
 func Debug(message string) {
+	log.Println(message)
 	globalLogger.Debug(message)
 }
 
 func InfoWithContext(message string, context map[string]interface{}) {
+	log.Println(message)
 	globalLogger.InfoWithContext(message, context)
 }
 
