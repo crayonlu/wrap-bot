@@ -3,11 +3,11 @@ package rss
 import (
 	"fmt"
 	"html"
-	"log"
 	"regexp"
 	"strings"
 
 	"github.com/crayon/wrap-bot/internal/config"
+	"github.com/crayon/wrap-bot/pkgs/logger"
 	"github.com/crayon/wrap-bot/pkgs/napcat"
 )
 
@@ -50,7 +50,7 @@ func (rp *RssPush) SendRssPush() error {
 	var sendErr error
 	for feedID, rss := range feeds {
 		if rss.Channel == nil || len(rss.Channel.Items) == 0 {
-			log.Printf("Skipping empty feed: %s", feedID)
+			logger.Warn(fmt.Sprintf("Skipping empty feed: %s", feedID))
 			continue
 		}
 
@@ -69,14 +69,14 @@ func (rp *RssPush) SendRssPush() error {
 				)
 				forwardNodes = append([]napcat.ForwardNode{aiNode}, forwardNodes...)
 			} else {
-				log.Printf("AI analysis failed for %s: %v", feedID, err)
+				logger.Error(fmt.Sprintf("AI analysis failed for %s: %v", feedID, err))
 			}
 		}
 
 		for _, groupID := range rp.cfg.RssPushGroups {
 			_, err := napcatClient.SendGroupForwardMsg(groupID, forwardNodes)
 			if err != nil {
-				log.Printf("Failed to send RSS %s to group %d: %v", feedID, groupID, err)
+				logger.Error(fmt.Sprintf("Failed to send RSS %s to group %d: %v", feedID, groupID, err))
 				sendErr = err
 			}
 		}
@@ -84,7 +84,7 @@ func (rp *RssPush) SendRssPush() error {
 		for _, userID := range rp.cfg.RssPushUsers {
 			_, err := napcatClient.SendPrivateForwardMsg(userID, forwardNodes)
 			if err != nil {
-				log.Printf("Failed to send RSS %s to user %d: %v", feedID, userID, err)
+				logger.Error(fmt.Sprintf("Failed to send RSS %s to user %d: %v", feedID, userID, err))
 				sendErr = err
 			}
 		}

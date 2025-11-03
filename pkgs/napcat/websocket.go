@@ -3,12 +3,12 @@ package napcat
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"sync"
 	"time"
 
 	"github.com/crayon/wrap-bot/pkgs/bot"
+	"github.com/crayon/wrap-bot/pkgs/logger"
 	"github.com/gorilla/websocket"
 )
 
@@ -51,7 +51,7 @@ func (ws *WSClient) connect() error {
 	ws.connected = true
 	ws.mu.Unlock()
 
-	log.Printf("WebSocket connected to %s", ws.url)
+	logger.Info(fmt.Sprintf("WebSocket connected to %s", ws.url))
 	return nil
 }
 
@@ -69,7 +69,7 @@ func (ws *WSClient) Start(eventChan chan<- *bot.Event) error {
 		default:
 			_, message, err := ws.conn.ReadMessage()
 			if err != nil {
-				log.Printf("WebSocket read error: %v", err)
+				logger.Error(fmt.Sprintf("WebSocket read error: %v", err))
 				if ws.reconnect() != nil {
 					return err
 				}
@@ -78,7 +78,7 @@ func (ws *WSClient) Start(eventChan chan<- *bot.Event) error {
 
 			var event bot.Event
 			if err := json.Unmarshal(message, &event); err != nil {
-				log.Printf("Failed to unmarshal event: %v", err)
+				logger.Error(fmt.Sprintf("Failed to unmarshal event: %v", err))
 				continue
 			}
 
@@ -100,9 +100,9 @@ func (ws *WSClient) reconnect() error {
 	ws.mu.Unlock()
 
 	for i := 0; i < 10; i++ {
-		log.Printf("Attempting to reconnect... (attempt %d/10)", i+1)
+		logger.Warn(fmt.Sprintf("Attempting to reconnect... (attempt %d/10)", i+1))
 		if err := ws.connect(); err == nil {
-			log.Println("Reconnected successfully")
+			logger.Info("Reconnected successfully")
 			return nil
 		}
 		time.Sleep(time.Second * time.Duration(i+1))
@@ -121,7 +121,7 @@ func (ws *WSClient) heartbeat() {
 			ws.mu.Lock()
 			if ws.connected && ws.conn != nil {
 				if err := ws.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
-					log.Printf("Heartbeat failed: %v", err)
+					logger.Warn(fmt.Sprintf("Heartbeat failed: %v", err))
 					ws.connected = false
 				}
 			}

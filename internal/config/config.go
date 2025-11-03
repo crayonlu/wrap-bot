@@ -1,10 +1,11 @@
 package config
 
 import (
-	"log"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/crayon/wrap-bot/pkgs/logger"
 )
 
 type Config struct {
@@ -80,7 +81,7 @@ func getEnvBool(key string, defaultValue bool) bool {
 	if value := os.Getenv(key); value != "" {
 		b, err := strconv.ParseBool(value)
 		if err != nil {
-			log.Printf("Invalid boolean value for %s: %s, using default: %v", key, value, defaultValue)
+			logger.Warn("Invalid boolean value for " + key + ": " + value + ", using default")
 			return defaultValue
 		}
 		return b
@@ -105,7 +106,7 @@ func getEnvInt64Slice(key string, defaultValue []int64) []int64 {
 
 		num, err := strconv.ParseInt(part, 10, 64)
 		if err != nil {
-			log.Printf("Invalid int64 value in %s: %s, skipping", key, part)
+			logger.Warn("Invalid int64 value in " + key + ": " + part + ", skipping")
 			continue
 		}
 

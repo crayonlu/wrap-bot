@@ -2,7 +2,8 @@ package bot
 
 import (
 	"fmt"
-	"log"
+
+	"github.com/crayon/wrap-bot/pkgs/logger"
 )
 
 func (c *Context) Reply(message interface{}) error {
@@ -10,17 +11,17 @@ func (c *Context) Reply(message interface{}) error {
 	if api == nil {
 		return fmt.Errorf("API client not found in context")
 	}
-	
+
 	if c.Event.IsGroupMessage() {
 		_, err := api.SendGroupMessage(c.Event.GroupID, message)
 		return err
 	}
-	
+
 	if c.Event.IsPrivateMessage() {
 		_, err := api.SendPrivateMessage(c.Event.UserID, message)
 		return err
 	}
-	
+
 	return fmt.Errorf("unsupported message type for reply")
 }
 
@@ -32,21 +33,21 @@ func (c *Context) ReplyAt(text string) error {
 	if !c.Event.IsGroupMessage() {
 		return c.ReplyText(text)
 	}
-	
+
 	atSegment := MessageSegment{
 		Type: "at",
 		Data: map[string]interface{}{
 			"qq": fmt.Sprintf("%d", c.Event.UserID),
 		},
 	}
-	
+
 	textSegment := MessageSegment{
 		Type: "text",
 		Data: map[string]interface{}{
 			"text": " " + text,
 		},
 	}
-	
+
 	return c.Reply([]MessageSegment{atSegment, textSegment})
 }
 
@@ -68,13 +69,13 @@ func InjectAPIClient(api APIClient) HandlerFunc {
 
 func OnCommand(prefix string, command string, handler HandlerFunc) HandlerFunc {
 	fullCommand := prefix + command
-	
+
 	return func(ctx *Context) {
 		text := ctx.Event.GetText()
 		if len(text) < len(fullCommand) {
 			return
 		}
-		
+
 		if text[:len(fullCommand)] == fullCommand {
 			handler(ctx)
 		}
@@ -107,7 +108,7 @@ func OnRegex(pattern string, handler HandlerFunc) HandlerFunc {
 
 func LogError(err error, context string) {
 	if err != nil {
-		log.Printf("Error [%s]: %v", context, err)
+		logger.Error(fmt.Sprintf("Error [%s]: %v", context, err))
 	}
 }
 

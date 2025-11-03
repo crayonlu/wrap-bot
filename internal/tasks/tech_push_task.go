@@ -1,12 +1,13 @@
 package tasks
 
 import (
-	"log"
+	"fmt"
 
 	"github.com/crayon/wrap-bot/internal/config"
 	scheduler "github.com/crayon/wrap-bot/pkgs/feature"
 	"github.com/crayon/wrap-bot/pkgs/feature/ai"
 	"github.com/crayon/wrap-bot/pkgs/feature/tech_push"
+	"github.com/crayon/wrap-bot/pkgs/logger"
 )
 
 type TechPushTask struct {
@@ -43,20 +44,20 @@ func (t *TechPushTask) Name() string {
 
 func (t *TechPushTask) Schedule(sched *scheduler.Scheduler, cfg *config.Config) error {
 	if cfg.HotApiHost == "" || cfg.HotApiKey == "" {
-		log.Println("TechPushTask: HOT_API_HOST or HOT_API_KEY not set, skipping")
+		logger.Warn("TechPushTask: HOT_API_HOST or HOT_API_KEY not set, skipping")
 		return nil
 	}
 
 	if len(cfg.TechPushGroups) == 0 && len(cfg.TechPushUsers) == 0 {
-		log.Println("TechPushTask: no target groups or users configured, skipping")
+		logger.Warn("TechPushTask: no target groups or users configured, skipping")
 		return nil
 	}
 
 	entryID, err := sched.At(12, 0, 0).WithID(t.Name()).Do(func() {
 		if err := t.service.SendTechPush(t.cache); err != nil {
-			log.Printf("TechPushTask execution failed: %v", err)
+			logger.Error(fmt.Sprintf("TechPushTask execution failed: %v", err))
 		} else {
-			log.Println("TechPushTask executed successfully")
+			logger.Info("TechPushTask executed successfully")
 		}
 	})
 

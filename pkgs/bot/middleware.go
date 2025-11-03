@@ -1,16 +1,18 @@
 package bot
 
 import (
-	"log"
+	"fmt"
 	"runtime/debug"
 	"time"
+
+	"github.com/crayon/wrap-bot/pkgs/logger"
 )
 
 func Recovery() HandlerFunc {
 	return func(ctx *Context) {
 		defer func() {
 			if err := recover(); err != nil {
-				log.Printf("Panic recovered: %v\n%s", err, debug.Stack())
+				logger.Error(fmt.Sprintf("Panic recovered: %v\n%s", err, debug.Stack()))
 				ctx.Abort()
 			}
 		}()
@@ -28,30 +30,30 @@ func Logger() HandlerFunc {
 
 		switch ctx.Event.PostType {
 		case EventTypeMessage:
-			log.Printf("[%s] Type=%s UserID=%d GroupID=%d Message=%s Duration=%v",
+			logger.Info(fmt.Sprintf("[%s] Type=%s UserID=%d GroupID=%d Message=%s Duration=%v",
 				ctx.Event.PostType,
 				ctx.Event.MessageType,
 				ctx.Event.UserID,
 				ctx.Event.GroupID,
 				ctx.Event.RawMessage,
 				duration,
-			)
+			))
 		case EventTypeNotice:
-			log.Printf("[%s] NoticeType=%s UserID=%d GroupID=%d Duration=%v",
+			logger.Info(fmt.Sprintf("[%s] NoticeType=%s UserID=%d GroupID=%d Duration=%v",
 				ctx.Event.PostType,
 				ctx.Event.NoticeType,
 				ctx.Event.UserID,
 				ctx.Event.GroupID,
 				duration,
-			)
+			))
 		case EventTypeRequest:
-			log.Printf("[%s] RequestType=%s UserID=%d Comment=%s Duration=%v",
+			logger.Info(fmt.Sprintf("[%s] RequestType=%s UserID=%d Comment=%s Duration=%v",
 				ctx.Event.PostType,
 				ctx.Event.RequestType,
 				ctx.Event.UserID,
 				ctx.Event.Comment,
 				duration,
-			)
+			))
 		}
 	}
 }

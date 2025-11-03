@@ -57,6 +57,7 @@ func TriggerTask(c echo.Context) error {
 	if !success {
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"error": "task not found or cannot be triggered",
+			"id":    taskID,
 		})
 	}
 

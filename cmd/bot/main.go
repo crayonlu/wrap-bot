@@ -1,7 +1,8 @@
 package main
 
 import (
-	"log"
+	"fmt"
+	"os"
 	"time"
 
 	"github.com/crayon/wrap-bot/internal/admin"
@@ -17,6 +18,8 @@ import (
 )
 
 func main() {
+	logger.SetupStdLogger()
+
 	cfg := config.Load()
 
 	engine := bot.New()
@@ -55,12 +58,13 @@ func main() {
 	go adminws.StartStatusBroadcaster(wsHub, engine, 3*time.Second)
 
 	if cfg.ServerEnabled {
-		log.Printf("Starting admin server on port %s", cfg.ServerPort)
+		logger.Info(fmt.Sprintf("Starting admin server on port %s", cfg.ServerPort))
 		admin.StartServer(cfg.ServerPort)
 	}
 
-	log.Printf("Starting bot with NapCat WebSocket: %s", cfg.NapCatWSURL)
+	logger.Info(fmt.Sprintf("Starting bot with NapCat WebSocket: %s", cfg.NapCatWSURL))
 	if err := engine.Run(); err != nil {
-		log.Fatalf("Bot stopped with error: %v", err)
+		logger.Error(fmt.Sprintf("Bot stopped with error: %v", err))
+		os.Exit(1)
 	}
 }

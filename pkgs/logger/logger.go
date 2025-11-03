@@ -1,6 +1,9 @@
 package logger
 
 import (
+	"io"
+	"log"
+	"os"
 	"sync"
 	"time"
 )
@@ -22,10 +25,10 @@ type LogEntry struct {
 }
 
 type Logger struct {
-	mu           sync.RWMutex
-	entries      []LogEntry
-	maxSize      int
-	broadcastFn  func(LogEntry)
+	mu          sync.RWMutex
+	entries     []LogEntry
+	maxSize     int
+	broadcastFn func(LogEntry)
 }
 
 var globalLogger *Logger
@@ -128,4 +131,27 @@ func Debug(message string) {
 
 func InfoWithContext(message string, context map[string]interface{}) {
 	globalLogger.InfoWithContext(message, context)
+}
+
+type logWriter struct {
+	level  LogLevel
+	output io.Writer
+}
+
+func (w *logWriter) Write(p []byte) (n int, err error) {
+	message := string(p)
+	if len(message) > 0 && message[len(message)-1] == '\n' {
+		message = message[:len(message)-1]
+	}
+	globalLogger.Log(w.level, message, nil)
+	return w.output.Write(p)
+}
+
+func SetupStdLogger() {
+	writer := &logWriter{
+		level:  LogLevelInfo,
+		output: os.Stdout,
+	}
+	log.SetOutput(writer)
+	log.SetFlags(log.LstdFlags)
 }

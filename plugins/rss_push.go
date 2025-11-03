@@ -1,12 +1,13 @@
 package plugins
 
 import (
-	"log"
+	"fmt"
 
 	"github.com/crayon/wrap-bot/internal/config"
 	"github.com/crayon/wrap-bot/pkgs/bot"
 	"github.com/crayon/wrap-bot/pkgs/feature/ai"
 	"github.com/crayon/wrap-bot/pkgs/feature/rss"
+	"github.com/crayon/wrap-bot/pkgs/logger"
 )
 
 var rssPushService *rss.RssPush
@@ -34,9 +35,9 @@ func RssPushPlugin(cfg *config.Config) bot.HandlerFunc {
 		if ctx.Event.RawMessage == "/rss" {
 			go func() {
 				if err := rssPushService.SendRssPush(); err != nil {
-					log.Printf("RSS push failed: %v", err)
+					logger.Error(fmt.Sprintf("RSS push failed: %v", err))
 				} else {
-					log.Printf("RSS push succeeded")
+					logger.Info("RSS push succeeded")
 				}
 			}()
 			return

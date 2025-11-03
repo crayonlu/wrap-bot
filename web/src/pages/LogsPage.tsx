@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useLogs } from '../lib/hooks/useQuery'
-import { AlertCircle, Info, AlertTriangle } from 'lucide-react'
+import { AlertCircle, Info, AlertTriangle, Pause, Play } from 'lucide-react'
+import Selector from '../components/Selector'
 
 type LogLevel = 'error' | 'warn' | 'info' | 'debug'
 
@@ -14,10 +15,18 @@ const levelIcons: Record<LogLevel, typeof AlertCircle> = {
 export default function LogsPage() {
   const [selectedLevel, setSelectedLevel] = useState<string>('all')
   const [limit, setLimit] = useState(100)
+  const [autoScroll, setAutoScroll] = useState(true)
+  const logsEndRef = useRef<HTMLDivElement>(null)
   const { data: logs, isLoading } = useLogs(
     selectedLevel === 'all' ? undefined : selectedLevel,
     limit
   )
+
+  useEffect(() => {
+    if (autoScroll && logsEndRef.current) {
+      logsEndRef.current.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [logs, autoScroll])
 
   if (isLoading) {
     return (
@@ -35,26 +44,37 @@ export default function LogsPage() {
       </div>
 
       <div className="logs__filters">
-        <select
+        <Selector
           value={selectedLevel}
-          onChange={(e) => setSelectedLevel(e.target.value)}
-        >
-          <option value="all">All Levels</option>
-          <option value="error">Error</option>
-          <option value="warn">Warning</option>
-          <option value="info">Info</option>
-          <option value="debug">Debug</option>
-        </select>
+          onChange={(value) => setSelectedLevel(value as string)}
+          options={[
+            { value: 'all', label: 'All Levels' },
+            { value: 'error', label: 'Error' },
+            { value: 'warn', label: 'Warning' },
+            { value: 'info', label: 'Info' },
+            { value: 'debug', label: 'Debug' },
+          ]}
+        />
 
-        <select
+        <Selector
           value={limit}
-          onChange={(e) => setLimit(Number(e.target.value))}
+          onChange={(value) => setLimit(value as number)}
+          options={[
+            { value: 50, label: '50 entries' },
+            { value: 100, label: '100 entries' },
+            { value: 200, label: '200 entries' },
+            { value: 500, label: '500 entries' },
+          ]}
+        />
+
+        <button
+          onClick={() => setAutoScroll(!autoScroll)}
+          className="login-page__button"
+          style={{ marginLeft: '1rem' }}
         >
-          <option value={50}>50 entries</option>
-          <option value={100}>100 entries</option>
-          <option value={200}>200 entries</option>
-          <option value={500}>500 entries</option>
-        </select>
+          {autoScroll ? <Pause style={{ width: '1rem', height: '1rem' }} /> : <Play style={{ width: '1rem', height: '1rem' }} />}
+          {autoScroll ? 'Pause' : 'Resume'}
+        </button>
       </div>
 
       <div className="logs__container">
@@ -88,6 +108,7 @@ export default function LogsPage() {
               </div>
             )
           })}
+          <div ref={logsEndRef} />
         </div>
       </div>
     </div>

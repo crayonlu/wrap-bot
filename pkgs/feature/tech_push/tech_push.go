@@ -2,10 +2,10 @@ package tech_push
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/crayon/wrap-bot/internal/config"
 	"github.com/crayon/wrap-bot/pkgs/feature/tech_push/handlers"
+	"github.com/crayon/wrap-bot/pkgs/logger"
 	"github.com/crayon/wrap-bot/pkgs/napcat"
 )
 
@@ -39,7 +39,7 @@ func (tp *TechPush) SendTechPush(cachedData map[string][]byte) error {
 	for name, source := range dataSources {
 		data, err := client.Get(source.Endpoint)
 		if err != nil {
-			log.Printf("Failed to fetch %s data, using cache: %v", name, err)
+			logger.Warn(fmt.Sprintf("Failed to fetch %s data, using cache: %v", name, err))
 			if cached, ok := cachedData[name]; ok {
 				freshData[name] = cached
 			}
@@ -58,7 +58,7 @@ func (tp *TechPush) SendTechPush(cachedData map[string][]byte) error {
 	for _, groupID := range tp.cfg.TechPushGroups {
 		_, err := napcatClient.SendGroupForwardMsg(groupID, forwardNodes)
 		if err != nil {
-			log.Printf("Failed to send to group %d: %v", groupID, err)
+			logger.Error(fmt.Sprintf("Failed to send to group %d: %v", groupID, err))
 			sendErr = err
 		}
 	}
@@ -66,7 +66,7 @@ func (tp *TechPush) SendTechPush(cachedData map[string][]byte) error {
 	for _, userID := range tp.cfg.TechPushUsers {
 		_, err := napcatClient.SendPrivateForwardMsg(userID, forwardNodes)
 		if err != nil {
-			log.Printf("Failed to send to user %d: %v", userID, err)
+			logger.Error(fmt.Sprintf("Failed to send to user %d: %v", userID, err))
 			sendErr = err
 		}
 	}
@@ -88,7 +88,7 @@ func (tp *TechPush) buildForwardNodes(data map[string][]byte, botQQ int64) []nap
 		case func([]byte) (*handlers.JuejinRes, error):
 			res, err := handler(rawData)
 			if err != nil {
-				log.Printf("Failed to parse %s: %v", name, err)
+				logger.Error(fmt.Sprintf("Failed to parse %s: %v", name, err))
 				continue
 			}
 			nodes = append(nodes, buildGenericNodes(res.Title, res.Articles, 10, botQQ)...)
@@ -99,7 +99,7 @@ func (tp *TechPush) buildForwardNodes(data map[string][]byte, botQQ int64) []nap
 		case func([]byte) (*handlers.BilibiliRes, error):
 			res, err := handler(rawData)
 			if err != nil {
-				log.Printf("Failed to parse %s: %v", name, err)
+				logger.Error(fmt.Sprintf("Failed to parse %s: %v", name, err))
 				continue
 			}
 			nodes = append(nodes, buildGenericNodes(res.Title, res.Videos, 10, botQQ)...)
@@ -118,7 +118,7 @@ func (tp *TechPush) buildForwardNodes(data map[string][]byte, botQQ int64) []nap
 			)
 			nodes = append([]napcat.ForwardNode{aiNode}, nodes...)
 		} else {
-			log.Printf("AI analysis failed: %v", err)
+			logger.Error(fmt.Sprintf("AI analysis failed: %v", err))
 		}
 	}
 

@@ -1,12 +1,12 @@
 package middleware
 
 import (
-	"log"
 	"net/http"
 	"os"
 	"strings"
 	"time"
 
+	"github.com/crayon/wrap-bot/pkgs/logger"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
 )
@@ -16,7 +16,8 @@ var jwtSecret []byte
 func init() {
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
-		log.Fatal("JWT_SECRET environment variable is required")
+		logger.Error("JWT_SECRET environment variable is required")
+		os.Exit(1)
 	}
 	jwtSecret = []byte(secret)
 }

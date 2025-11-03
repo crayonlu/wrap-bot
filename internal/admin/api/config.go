@@ -11,13 +11,30 @@ import (
 
 func GetConfig(c echo.Context) error {
 	configKeys := []string{
-		"AI_ENABLED",
-		"AI_URL",
-		"AI_MODEL",
-		"HOT_API_HOST",
-		"RSS_API_HOST",
 		"NAPCAT_HTTP_URL",
 		"NAPCAT_WS_URL",
+		"NAPCAT_HTTP_TOKEN",
+		"NAPCAT_WS_TOKEN",
+		"SERVER_PORT",
+		"SERVER_ENABLED",
+		"DEBUG",
+		"COMMAND_PREFIX",
+		"AI_ENABLED",
+		"AI_URL",
+		"AI_KEY",
+		"AI_MODEL",
+		"SYSTEM_PROMPT_PATH",
+		"ANALYZER_PROMPT_PATH",
+		"HOT_API_HOST",
+		"HOT_API_KEY",
+		"RSS_API_HOST",
+		"TECH_PUSH_GROUPS",
+		"TECH_PUSH_USERS",
+		"RSS_PUSH_GROUPS",
+		"RSS_PUSH_USERS",
+		"ALLOWED_USERS",
+		"ALLOWED_GROUPS",
+		"ADMIN_IDS",
 	}
 
 	config := make([]types.ConfigItem, 0, len(configKeys))

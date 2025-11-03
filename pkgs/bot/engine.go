@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"runtime"
@@ -148,7 +147,6 @@ func (e *Engine) handleEvent(event *Event) {
 			<-e.workerPool
 			if err := recover(); err != nil {
 				logger.Error(fmt.Sprintf("Panic recovered in event handler: %v", err))
-				log.Printf("Panic recovered in event handler: %v", err)
 			}
 		}()
 
@@ -170,7 +168,6 @@ func (e *Engine) Run() error {
 	go func() {
 		if err := e.wsClient.Start(e.eventChan); err != nil {
 			logger.Error(fmt.Sprintf("WebSocket client error: %v", err))
-			log.Printf("WebSocket client error: %v", err)
 			e.cancel()
 		}
 	}()
@@ -183,11 +180,11 @@ func (e *Engine) Run() error {
 		case event := <-e.eventChan:
 			e.handleEvent(event)
 		case <-sigChan:
-			log.Println("Shutting down gracefully...")
+			logger.Info("Shutting down gracefully...")
 			e.Shutdown()
 			return nil
 		case <-e.ctx.Done():
-			log.Println("Context cancelled, shutting down...")
+			logger.Info("Context cancelled, shutting down...")
 			e.Shutdown()
 			return e.ctx.Err()
 		}
@@ -233,7 +230,20 @@ func (e *Engine) RegisterPlugin(name, description string, handler HandlerFunc) {
 		Enabled:     true,
 		Handler:     handler,
 	}
-	e.Use(handler)
+
+	wrappedHandler := func(ctx *Context) {
+		e.pluginsMu.RLock()
+		plugin, exists := e.plugins[name]
+		e.pluginsMu.RUnlock()
+
+		if exists && plugin.Enabled {
+			handler(ctx)
+		} else {
+			ctx.Next()
+		}
+	}
+
+	e.Use(wrappedHandler)
 	e.broadcastPlugins()
 }
 

@@ -2,11 +2,11 @@ package plugins
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/crayon/wrap-bot/internal/config"
 	"github.com/crayon/wrap-bot/pkgs/bot"
 	"github.com/crayon/wrap-bot/pkgs/feature/ai"
+	"github.com/crayon/wrap-bot/pkgs/logger"
 )
 
 func AIChatPlugin(cfg *config.Config) bot.HandlerFunc {
@@ -52,7 +52,7 @@ func AIChatPlugin(cfg *config.Config) bot.HandlerFunc {
 
 		response, err := aiService.Chat(conversationID, text, true)
 		if err != nil {
-			log.Printf("AI chat error: %v", err)
+			logger.Error(fmt.Sprintf("AI chat error: %v", err))
 			ctx.ReplyText("坠机了嘻嘻...")
 			return
 		}

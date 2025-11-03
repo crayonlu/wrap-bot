@@ -2,8 +2,9 @@ package ai
 
 import (
 	"fmt"
-	"log"
 	"os"
+
+	"github.com/crayon/wrap-bot/pkgs/logger"
 )
 
 type Service interface {
@@ -51,7 +52,7 @@ func NewService(cfg Config) Service {
 func loadSystemPrompt(path string) string {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		log.Printf("Failed to load system prompt from %s: %v, using default", path, err)
+		logger.Warn(fmt.Sprintf("Failed to load system prompt from %s: %v, using default", path, err))
 		return "你是一个友好、乐于助人的猫娘小管家"
 	}
 	return string(data)

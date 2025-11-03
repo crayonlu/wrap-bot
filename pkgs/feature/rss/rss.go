@@ -2,7 +2,8 @@ package rss
 
 import (
 	"fmt"
-	"log"
+
+	"github.com/crayon/wrap-bot/pkgs/logger"
 )
 
 type RssService struct {
@@ -21,18 +22,18 @@ func (rs *RssService) FetchAllFeeds() (map[string]*RSS, error) {
 	for _, config := range RssConfigs {
 		data, err := rs.client.Get(config.Route)
 		if err != nil {
-			log.Printf("Failed to fetch RSS feed %s: %v", config.ID, err)
+			logger.Error(fmt.Sprintf("Failed to fetch RSS feed %s: %v", config.ID, err))
 			continue
 		}
 
 		rss, err := Parse(data)
 		if err != nil {
-			log.Printf("Failed to parse RSS feed %s: %v", config.ID, err)
+			logger.Error(fmt.Sprintf("Failed to parse RSS feed %s: %v", config.ID, err))
 			continue
 		}
 
 		feeds[config.ID] = rss
-		log.Printf("Successfully fetched RSS feed: %s with %d items", config.ID, len(rss.Channel.Items))
+		logger.Info(fmt.Sprintf("Successfully fetched RSS feed: %s with %d items", config.ID, len(rss.Channel.Items)))
 	}
 
 	if len(feeds) == 0 {

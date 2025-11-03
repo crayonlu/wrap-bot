@@ -1,12 +1,13 @@
 package plugins
 
 import (
-	"log"
+	"fmt"
 
 	"github.com/crayon/wrap-bot/internal/config"
 	"github.com/crayon/wrap-bot/pkgs/bot"
 	"github.com/crayon/wrap-bot/pkgs/feature/ai"
 	"github.com/crayon/wrap-bot/pkgs/feature/tech_push"
+	"github.com/crayon/wrap-bot/pkgs/logger"
 )
 
 var techPushCache = make(map[string][]byte)
@@ -35,7 +36,7 @@ func TechPushPlugin(cfg *config.Config) bot.HandlerFunc {
 		if ctx.Event.RawMessage == "/tech" {
 			go func() {
 				if err := techPushService.SendTechPush(techPushCache); err != nil {
-					log.Printf("Tech push failed: %v", err)
+					logger.Error(fmt.Sprintf("Tech push failed: %v", err))
 				}
 			}()
 			return

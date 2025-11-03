@@ -2,9 +2,9 @@ package scheduler
 
 import (
 	"fmt"
-	"log"
 	"sync"
 
+	"github.com/crayon/wrap-bot/pkgs/logger"
 	"github.com/robfig/cron/v3"
 )
 
@@ -25,7 +25,6 @@ func New() *Scheduler {
 	return &Scheduler{
 		cron: cron.New(
 			cron.WithSeconds(),
-			cron.WithLogger(cron.VerbosePrintfLogger(log.Default())),
 		),
 		tasks: make(map[string]*TaskInfo),
 	}
@@ -104,12 +103,15 @@ func (s *Scheduler) TriggerTask(id string) bool {
 	task, exists := s.tasks[id]
 	s.mu.RUnlock()
 	if !exists {
+		logger.Warn(fmt.Sprintf("TriggerTask: task %s not found", id))
 		return false
 	}
 	entry := s.cron.Entry(task.EntryID)
 	if entry.ID == 0 {
+		logger.Warn(fmt.Sprintf("TriggerTask: entry not found for task %s (EntryID: %d)", id, task.EntryID))
 		return false
 	}
+	logger.Info(fmt.Sprintf("TriggerTask: triggering task %s (%s)", id, task.Name))
 	go entry.Job.Run()
 	return true
 }

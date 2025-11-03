@@ -1,10 +1,9 @@
 package tasks
 
 import (
-	"log"
-
 	"github.com/crayon/wrap-bot/internal/config"
 	scheduler "github.com/crayon/wrap-bot/pkgs/feature"
+	"github.com/crayon/wrap-bot/pkgs/logger"
 )
 
 type Task interface {
@@ -20,9 +19,9 @@ func RegisterAll(sched *scheduler.Scheduler, cfg *config.Config) {
 
 	for _, task := range tasks {
 		if err := task.Schedule(sched, cfg); err != nil {
-			log.Printf("Failed to schedule task %s: %v", task.Name(), err)
+			logger.Error("Failed to schedule task " + task.Name() + ": " + err.Error())
 		} else {
-			log.Printf("Scheduled task: %s", task.Name())
+			logger.Info("Scheduled task: " + task.Name())
 		}
 	}
 }
