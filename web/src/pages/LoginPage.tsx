@@ -61,7 +61,7 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 className="login-page__input"
-                placeholder="Enter admin password"
+                placeholder="Enter password"
               />
             </div>
 

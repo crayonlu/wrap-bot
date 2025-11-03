@@ -1,0 +1,97 @@
+@import './variables.less';
+
+.plugins {
+  &__header {
+    margin-bottom: @spacing-xl;
+
+    h1 {
+      font-size: 1.875rem;
+      font-weight: 700;
+      color: @color-primary;
+      margin: 0;
+    }
+
+    p {
+      color: @color-text-secondary;
+      margin-top: @spacing-xs;
+    }
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: @spacing-md;
+
+    @media (min-width: 768px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @media (min-width: 1024px) {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  &__card {
+    background: @color-bg-secondary;
+    border-radius: @radius-lg;
+    box-shadow: @shadow-sm;
+    border: 1px solid @color-border-light;
+    padding: @spacing-lg;
+    transition: all @transition-fast;
+
+    &:hover {
+      box-shadow: @shadow-md;
+    }
+  }
+
+  &__card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: @spacing-md;
+  }
+
+  &__card-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: @color-primary;
+    margin: 0;
+  }
+
+  &__card-description {
+    color: @color-text-secondary;
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+
+  &__toggle {
+    position: relative;
+    width: 3rem;
+    height: 1.5rem;
+    background: @color-text-secondary;
+    border-radius: 9999px;
+    border: none;
+    cursor: pointer;
+    transition: background @transition-fast;
+
+    &--active {
+      background: @color-primary;
+    }
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 1.25rem;
+      height: 1.25rem;
+      background: white;
+      border-radius: 50%;
+      transition: transform @transition-fast;
+    }
+
+    &--active::after {
+      transform: translateX(1.5rem);
+    }
+  }
+}

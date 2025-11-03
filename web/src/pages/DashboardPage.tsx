@@ -6,56 +6,56 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#8B7355]"></div>
+      <div className="loading">
+        <div className="loading__spinner"></div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-[#8B7355]">Dashboard</h1>
-        <p className="text-gray-600 mt-1">Bot status and statistics</p>
+    <div className="dashboard">
+      <div className="dashboard__header">
+        <h1>Dashboard</h1>
+        <p>Bot status and statistics</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-xl shadow-sm border border-[#EBE6DF] p-6">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-[#FAF8F5] rounded-lg">
-              <Activity className="w-6 h-6 text-[#8B7355]" />
+      <div className="dashboard__grid">
+        <div className="dashboard__card">
+          <div className="dashboard__card-content">
+            <div className="dashboard__icon">
+              <Activity />
             </div>
             <div>
-              <p className="text-sm text-gray-600">Status</p>
-              <p className="text-2xl font-bold text-[#8B7355]">
+              <p className="dashboard__label">Status</p>
+              <p className="dashboard__value">
                 {status?.running ? 'Running' : 'Stopped'}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-[#EBE6DF] p-6">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-[#FAF8F5] rounded-lg">
-              <MessageSquare className="w-6 h-6 text-[#8B7355]" />
+        <div className="dashboard__card">
+          <div className="dashboard__card-content">
+            <div className="dashboard__icon">
+              <MessageSquare />
             </div>
             <div>
-              <p className="text-sm text-gray-600">Uptime (seconds)</p>
-              <p className="text-2xl font-bold text-[#8B7355]">
+              <p className="dashboard__label">Uptime (seconds)</p>
+              <p className="dashboard__value">
                 {status?.uptime || 0}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-[#EBE6DF] p-6">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-[#FAF8F5] rounded-lg">
-              <Send className="w-6 h-6 text-[#8B7355]" />
+        <div className="dashboard__card">
+          <div className="dashboard__card-content">
+            <div className="dashboard__icon">
+              <Send />
             </div>
             <div>
-              <p className="text-sm text-gray-600">Version</p>
-              <p className="text-2xl font-bold text-[#8B7355]">
+              <p className="dashboard__label">Version</p>
+              <p className="dashboard__value">
                 {status?.version || 'N/A'}
               </p>
             </div>
@@ -64,17 +64,15 @@ export default function DashboardPage() {
       </div>
 
       {status && (
-        <div className="bg-white rounded-xl shadow-sm border border-[#EBE6DF] p-6">
-          <h2 className="text-xl font-semibold text-[#8B7355] mb-4">System Info</h2>
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-gray-600">Go Version:</span>
-              <span className="font-medium text-[#8B7355]">{status.go_version}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Bot Version:</span>
-              <span className="font-medium text-[#8B7355]">{status.version}</span>
-            </div>
+        <div className="dashboard__info-card">
+          <h2>System Info</h2>
+          <div className="dashboard__info-row">
+            <span>Go Version:</span>
+            <span>{status.go_version}</span>
+          </div>
+          <div className="dashboard__info-row">
+            <span>Bot Version:</span>
+            <span>{status.version}</span>
           </div>
         </div>
       )}
