@@ -2,11 +2,13 @@ version: '3.8'
 
 services:
   bot:
-    image: ghcr.io/crayonlu/wrap-bot:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: wrap-bot
     restart: unless-stopped
     ports:
-      - "8080:8080"  # Admin panel
+      - "8080:8080"
     env_file:
       - .env
     volumes:
