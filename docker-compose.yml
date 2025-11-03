@@ -10,8 +10,7 @@ services:
     env_file:
       - .env
     volumes:
-      - ./configs:/app/configs:ro
-      - ./data:/data
+      - ./configs:/app/configs
     networks:
       - bot-network
 

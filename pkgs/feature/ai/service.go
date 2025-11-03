@@ -56,22 +56,17 @@ func NewService(cfg Config) Service {
 	}
 }
 
-func loadSystemPrompt(path string) string {
-	prompt, _ := loadSystemPromptWithTime(path)
-	return prompt
-}
-
 func loadSystemPromptWithTime(path string) (string, time.Time) {
 	stat, err := os.Stat(path)
 	if err != nil {
 		logger.Warn(fmt.Sprintf("Failed to stat system prompt %s: %v, using default", path, err))
-		return "你是一个友好、乐于助人的猫娘小管家", time.Time{}
+		return "", time.Time{}
 	}
 
 	data, err := os.ReadFile(path)
 	if err != nil {
 		logger.Warn(fmt.Sprintf("Failed to load system prompt from %s: %v, using default", path, err))
-		return "你是一个友好、乐于助人的猫娘小管家", time.Time{}
+		return "", time.Time{}
 	}
 	return string(data), stat.ModTime()
 }

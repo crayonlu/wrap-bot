@@ -5,16 +5,10 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/crayon/wrap-bot/internal/config"
 	"github.com/crayon/wrap-bot/pkgs/logger"
 	"github.com/labstack/echo/v4"
-)
-
-const (
-	defaultReadDir  = "configs"
-	defaultWriteDir = "/data/configs"
 )
 
 type PresetFile struct {
@@ -36,72 +30,23 @@ func getConfiguredPath(filename string) string {
 	case "analyzer_prompt.md":
 		return cfg.AnalyzerPromptPath
 	default:
-		return filepath.Join(defaultReadDir, filename)
+		return ""
 	}
-}
-
-func getWritablePath(filename string) string {
-	configuredPath := getConfiguredPath(filename)
-
-	dir := filepath.Dir(configuredPath)
-
-	testFile := filepath.Join(dir, ".write_test")
-	if err := os.WriteFile(testFile, []byte("test"), 0644); err == nil {
-		os.Remove(testFile)
-		return configuredPath
-	}
-
-	return filepath.Join(defaultWriteDir, filename)
 }
 
 func GetPresets(c echo.Context) error {
-	var presets []PresetFile
-	seen := make(map[string]bool)
-
-	dirs := []string{defaultWriteDir, defaultReadDir}
-	for _, dir := range dirs {
-		files, err := os.ReadDir(dir)
-		if err != nil {
-			continue
-		}
-
-		for _, file := range files {
-			if file.IsDir() || filepath.Ext(file.Name()) != ".md" {
-				continue
-			}
-
-			if seen[file.Name()] {
-				continue
-			}
-			seen[file.Name()] = true
-
-			filePath := filepath.Join(dir, file.Name())
-			content, err := os.ReadFile(filePath)
-			if err != nil {
-				continue
-			}
-
-			presets = append(presets, PresetFile{
-				Name:    file.Name(),
-				Path:    filePath,
-				Content: string(content),
-			})
-		}
-	}
-
 	cfg := config.Load()
+
+	presets := []PresetFile{}
 	configFiles := map[string]string{
 		"system_prompt.md":   cfg.SystemPromptPath,
 		"analyzer_prompt.md": cfg.AnalyzerPromptPath,
 	}
 
 	for filename, path := range configFiles {
-		if seen[filename] {
-			continue
-		}
-
 		content, err := os.ReadFile(path)
 		if err != nil {
+			logger.Warn(fmt.Sprintf("Failed to read preset %s from %s: %v", filename, path, err))
 			continue
 		}
 
@@ -124,20 +69,14 @@ func GetPreset(c echo.Context) error {
 		})
 	}
 
-	dirs := []string{defaultWriteDir, defaultReadDir}
-	var content []byte
-	var err error
-	var foundPath string
-
-	for _, dir := range dirs {
-		filePath := filepath.Join(dir, filename)
-		content, err = os.ReadFile(filePath)
-		if err == nil {
-			foundPath = filePath
-			break
-		}
+	filePath := getConfiguredPath(filename)
+	if filePath == "" {
+		return c.JSON(http.StatusNotFound, map[string]string{
+			"error": "Preset not found",
+		})
 	}
 
+	content, err := os.ReadFile(filePath)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, map[string]string{
 			"error": "Preset not found",
@@ -146,7 +85,7 @@ func GetPreset(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, PresetFile{
 		Name:    filename,
-		Path:    foundPath,
+		Path:    filePath,
 		Content: string(content),
 	})
 }
@@ -169,7 +108,12 @@ func UpdatePreset(c echo.Context) error {
 		})
 	}
 
-	writePath := getWritablePath(filename)
+	writePath := getConfiguredPath(filename)
+	if writePath == "" {
+		return c.JSON(http.StatusNotFound, map[string]string{
+			"error": "Preset not found",
+		})
+	}
 
 	dir := filepath.Dir(writePath)
 	if err := os.MkdirAll(dir, 0755); err != nil {
@@ -187,11 +131,6 @@ func UpdatePreset(c echo.Context) error {
 	}
 
 	logger.Info(fmt.Sprintf("Successfully updated preset: %s at %s", filename, writePath))
-
-	if strings.Contains(writePath, defaultWriteDir) {
-		configuredPath := getConfiguredPath(filename)
-		logger.Info(fmt.Sprintf("Note: Configured path %s is read-only, saved to %s instead", configuredPath, writePath))
-	}
 
 	return c.JSON(http.StatusOK, map[string]string{
 		"message": "Preset updated successfully",
