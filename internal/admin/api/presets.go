@@ -1,10 +1,12 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
 
+	"github.com/crayon/wrap-bot/pkgs/logger"
 	"github.com/labstack/echo/v4"
 )
 
@@ -54,7 +56,6 @@ func GetPreset(c echo.Context) error {
 	filename := c.Param("filename")
 	filePath := filepath.Join("configs", filename)
 
-	// Security: prevent path traversal
 	if filepath.Ext(filename) != ".md" || filepath.Base(filename) != filename {
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"error": "Invalid filename",
@@ -80,6 +81,7 @@ func UpdatePreset(c echo.Context) error {
 	filePath := filepath.Join("configs", filename)
 
 	if filepath.Ext(filename) != ".md" || filepath.Base(filename) != filename {
+		logger.Warn(fmt.Sprintf("Invalid filename attempt: %s", filename))
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"error": "Invalid filename",
 		})
@@ -87,17 +89,28 @@ func UpdatePreset(c echo.Context) error {
 
 	var req UpdatePresetRequest
 	if err := c.Bind(&req); err != nil {
+		logger.Error(fmt.Sprintf("Failed to bind request: %v", err))
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"error": "Invalid request body",
 		})
 	}
 
-	if err := os.WriteFile(filePath, []byte(req.Content), 0644); err != nil {
+	configsDir := "configs"
+	if err := os.MkdirAll(configsDir, 0755); err != nil {
+		logger.Error(fmt.Sprintf("Failed to create configs directory: %v", err))
 		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"error": "Failed to update preset",
+			"error": "Failed to create configs directory",
 		})
 	}
 
+	if err := os.WriteFile(filePath, []byte(req.Content), 0644); err != nil {
+		logger.Error(fmt.Sprintf("Failed to write file %s: %v", filePath, err))
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": fmt.Sprintf("Failed to update preset: %v", err),
+		})
+	}
+
+	logger.Info(fmt.Sprintf("Successfully updated preset: %s", filename))
 	return c.JSON(http.StatusOK, map[string]string{
 		"message": "Preset updated successfully",
 	})
