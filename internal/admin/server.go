@@ -31,6 +31,9 @@ func StartServer(port string) *echo.Echo {
 	admin.GET("/config", api.GetConfig)
 	admin.POST("/config", api.UpdateConfig)
 	admin.GET("/logs", api.GetLogs)
+	admin.GET("/presets", api.GetPresets)
+	admin.GET("/presets/:filename", api.GetPreset)
+	admin.PUT("/presets/:filename", api.UpdatePreset)
 
 	ctx := shared.GetAdminContext()
 	if ctx != nil && ctx.WSHub != nil {

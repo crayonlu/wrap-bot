@@ -8,6 +8,7 @@ import PluginsPage from './pages/PluginsPage'
 import TasksPage from './pages/TasksPage'
 import ConfigPage from './pages/ConfigPage'
 import LogsPage from './pages/LogsPage'
+import PresetsPage from './pages/PresetsPage'
 import MainLayout from './components/layout/MainLayout'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -36,6 +37,7 @@ function App() {
           <Route path="tasks" element={<TasksPage />} />
           <Route path="config" element={<ConfigPage />} />
           <Route path="logs" element={<LogsPage />} />
+          <Route path="presets" element={<PresetsPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
