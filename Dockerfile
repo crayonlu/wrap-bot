@@ -28,9 +28,14 @@ WORKDIR /app
 
 COPY --from=backend-builder /build/bot .
 COPY --from=backend-builder /build/web/dist ./web/dist
+COPY --from=backend-builder /build/configs ./configs
+
+RUN mkdir -p /data/configs && chmod -R 777 /data
 
 ENV TZ=Asia/Shanghai
 
 EXPOSE 8080
+
+VOLUME ["/data"]
 
 ENTRYPOINT ["./bot"]

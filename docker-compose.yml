@@ -11,7 +11,7 @@ services:
       - .env
     volumes:
       - ./configs:/app/configs:ro
-      - ./data:/app/data
+      - ./data:/data
     networks:
       - bot-network
 
