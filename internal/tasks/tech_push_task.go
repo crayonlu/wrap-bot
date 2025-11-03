@@ -23,13 +23,17 @@ func NewTechPushTask(cfg *config.Config) *TechPushTask {
 			APIURL:           cfg.AIURL,
 			APIKey:           cfg.AIKey,
 			Model:            cfg.AIModel,
-			SystemPromptPath: cfg.AnalyzerPromptPath,
+			SystemPromptPath: cfg.SystemPromptPath,
 			MaxHistory:       5,
 			Temperature:      0.7,
 			TopP:             0.9,
 			MaxTokens:        2000,
 		})
-		aiAnalyzer = ai.NewAnalyzer(aiService)
+
+		aiAnalyzer = ai.NewAnalyzer(ai.AnalyzerConfig{
+			Service:            aiService,
+			AnalyzerPromptPath: cfg.AnalyzerPromptPath,
+		})
 	}
 
 	return &TechPushTask{

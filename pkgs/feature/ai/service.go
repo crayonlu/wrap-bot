@@ -3,6 +3,8 @@ package ai
 import (
 	"fmt"
 	"os"
+	"sync"
+	"time"
 
 	"github.com/crayon/wrap-bot/pkgs/logger"
 )
@@ -13,14 +15,17 @@ type Service interface {
 }
 
 type AIService struct {
-	provider     Provider
-	history      History
-	toolRegistry ToolRegistry
-	model        string
-	systemPrompt string
-	temperature  float64
-	topP         float64
-	maxTokens    int
+	provider         Provider
+	history          History
+	toolRegistry     ToolRegistry
+	model            string
+	systemPrompt     string
+	systemPromptPath string
+	promptModTime    time.Time
+	promptMu         sync.RWMutex
+	temperature      float64
+	topP             float64
+	maxTokens        int
 }
 
 type Config struct {
@@ -35,27 +40,58 @@ type Config struct {
 }
 
 func NewService(cfg Config) Service {
-	systemPrompt := loadSystemPrompt(cfg.SystemPromptPath)
+	systemPrompt, modTime := loadSystemPromptWithTime(cfg.SystemPromptPath)
 
 	return &AIService{
-		provider:     NewHTTPProvider(cfg.APIURL, cfg.APIKey),
-		history:      NewMemoryHistory(cfg.MaxHistory),
-		toolRegistry: NewDefaultToolRegistry(),
-		model:        cfg.Model,
-		systemPrompt: systemPrompt,
-		temperature:  cfg.Temperature,
-		topP:         cfg.TopP,
-		maxTokens:    cfg.MaxTokens,
+		provider:         NewHTTPProvider(cfg.APIURL, cfg.APIKey),
+		history:          NewMemoryHistory(cfg.MaxHistory),
+		toolRegistry:     NewDefaultToolRegistry(),
+		model:            cfg.Model,
+		systemPrompt:     systemPrompt,
+		systemPromptPath: cfg.SystemPromptPath,
+		promptModTime:    modTime,
+		temperature:      cfg.Temperature,
+		topP:             cfg.TopP,
+		maxTokens:        cfg.MaxTokens,
 	}
 }
 
 func loadSystemPrompt(path string) string {
+	prompt, _ := loadSystemPromptWithTime(path)
+	return prompt
+}
+
+func loadSystemPromptWithTime(path string) (string, time.Time) {
+	stat, err := os.Stat(path)
+	if err != nil {
+		logger.Warn(fmt.Sprintf("Failed to stat system prompt %s: %v, using default", path, err))
+		return "你是一个友好、乐于助人的猫娘小管家", time.Time{}
+	}
+
 	data, err := os.ReadFile(path)
 	if err != nil {
 		logger.Warn(fmt.Sprintf("Failed to load system prompt from %s: %v, using default", path, err))
-		return "你是一个友好、乐于助人的猫娘小管家"
+		return "你是一个友好、乐于助人的猫娘小管家", time.Time{}
 	}
-	return string(data)
+	return string(data), stat.ModTime()
+}
+
+func (s *AIService) getSystemPrompt() string {
+	stat, err := os.Stat(s.systemPromptPath)
+	if err == nil && stat.ModTime().After(s.promptModTime) {
+		s.promptMu.Lock()
+		if stat.ModTime().After(s.promptModTime) {
+			newPrompt, modTime := loadSystemPromptWithTime(s.systemPromptPath)
+			s.systemPrompt = newPrompt
+			s.promptModTime = modTime
+			logger.Info(fmt.Sprintf("System prompt auto-reloaded from %s", s.systemPromptPath))
+		}
+		s.promptMu.Unlock()
+	}
+
+	s.promptMu.RLock()
+	defer s.promptMu.RUnlock()
+	return s.systemPrompt
 }
 
 func (s *AIService) Chat(conversationID, userMessage string, addToHistory bool) (string, error) {
@@ -65,7 +101,8 @@ func (s *AIService) Chat(conversationID, userMessage string, addToHistory bool) 
 		s.history.Add(conversationID, userMsg)
 	}
 
-	messages := []Message{{Role: "system", Content: s.systemPrompt}}
+	systemPrompt := s.getSystemPrompt()
+	messages := []Message{{Role: "system", Content: systemPrompt}}
 	messages = append(messages, s.history.Get(conversationID)...)
 
 	req := ChatRequest{
@@ -119,7 +156,8 @@ func (s *AIService) handleToolCalls(conversationID string, assistantMsg Message,
 		}
 	}
 
-	messages := []Message{{Role: "system", Content: s.systemPrompt}}
+	systemPrompt := s.getSystemPrompt()
+	messages := []Message{{Role: "system", Content: systemPrompt}}
 	messages = append(messages, s.history.Get(conversationID)...)
 
 	req := ChatRequest{

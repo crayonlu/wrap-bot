@@ -27,7 +27,11 @@ func TechPushPlugin(cfg *config.Config) bot.HandlerFunc {
 			TopP:             0.9,
 			MaxTokens:        2000,
 		})
-		aiAnalyzer = ai.NewAnalyzer(aiService)
+
+		aiAnalyzer = ai.NewAnalyzer(ai.AnalyzerConfig{
+			Service:            aiService,
+			AnalyzerPromptPath: cfg.AnalyzerPromptPath,
+		})
 	}
 
 	techPushService = tech_push.NewTechPush(cfg, aiAnalyzer)

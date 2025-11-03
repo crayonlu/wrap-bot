@@ -20,13 +20,17 @@ func RssPushPlugin(cfg *config.Config) bot.HandlerFunc {
 			APIURL:           cfg.AIURL,
 			APIKey:           cfg.AIKey,
 			Model:            cfg.AIModel,
-			SystemPromptPath: cfg.AnalyzerPromptPath,
+			SystemPromptPath: cfg.SystemPromptPath,
 			MaxHistory:       5,
 			Temperature:      0.7,
 			TopP:             0.9,
 			MaxTokens:        2000,
 		})
-		aiAnalyzer = ai.NewAnalyzer(aiService)
+
+		aiAnalyzer = ai.NewAnalyzer(ai.AnalyzerConfig{
+			Service:            aiService,
+			AnalyzerPromptPath: cfg.AnalyzerPromptPath,
+		})
 	}
 
 	rssPushService = rss.NewRssPush(cfg, aiAnalyzer)
