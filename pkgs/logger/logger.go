@@ -1,9 +1,11 @@
 package logger
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"os"
+	"strings"
 	"sync"
 	"time"
 )
@@ -49,9 +51,6 @@ func GetLogger() *Logger {
 }
 
 func (l *Logger) Log(level LogLevel, message string, context map[string]interface{}) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
 	entry := LogEntry{
 		Timestamp: time.Now().Format(time.RFC3339),
 		Level:     string(level),
@@ -59,15 +58,18 @@ func (l *Logger) Log(level LogLevel, message string, context map[string]interfac
 		Context:   context,
 	}
 
+	l.mu.Lock()
 	l.entries = append(l.entries, entry)
 	if len(l.entries) > l.maxSize {
 		l.entries = l.entries[1:]
 	}
+	broadcastFn := l.broadcastFn
+	l.mu.Unlock()
 
-	log.Printf("[%s] %s", string(level), message)
+	fmt.Fprintf(os.Stdout, "%s [%s] %s\n", entry.Timestamp, strings.ToUpper(string(level)), message)
 
-	if l.broadcastFn != nil {
-		go l.broadcastFn(entry)
+	if broadcastFn != nil {
+		go broadcastFn(entry)
 	}
 }
 
