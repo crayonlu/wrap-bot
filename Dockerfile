@@ -18,19 +18,15 @@ RUN go mod download
 COPY . .
 COPY --from=frontend-builder /web/dist ./web/dist
 
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-s -w' -o bot cmd/bot/main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} go build -a -installsuffix cgo -ldflags '-s -w' -o bot cmd/bot/main.go
 
-FROM alpine:latest
-
-RUN apk --no-cache add --no-scripts ca-certificates tzdata
+FROM gcr.io/distroless/static-debian12:latest
 
 WORKDIR /app
 
 COPY --from=backend-builder /build/bot .
 COPY --from=backend-builder /build/web/dist ./web/dist
 COPY --from=backend-builder /build/configs ./configs
-
-RUN mkdir -p /data/configs && chmod -R 777 /data
 
 ENV TZ=Asia/Shanghai
 
