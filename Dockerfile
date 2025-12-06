@@ -22,8 +22,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-s -w' -o 
 
 FROM alpine:latest
 
-RUN apk --no-cache add ca-certificates
-RUN apk --no-cache add tzdata
+RUN apk --no-cache add --no-scripts ca-certificates tzdata
 
 WORKDIR /app
 
