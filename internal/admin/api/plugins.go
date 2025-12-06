@@ -20,6 +20,7 @@ func GetPlugins(c echo.Context) error {
 		plugins = append(plugins, types.PluginStatus{
 			Name:    name,
 			Enabled: info.Enabled,
+			Discription: info.Description,
 		})
 	}
 	return c.JSON(http.StatusOK, plugins)

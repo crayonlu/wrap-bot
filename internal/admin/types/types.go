@@ -3,6 +3,7 @@ package types
 type PluginStatus struct {
 	Name    string `json:"name"`
 	Enabled bool   `json:"enabled"`
+	Discription string `json:"discription"`
 }
 
 type TaskStatus struct {
