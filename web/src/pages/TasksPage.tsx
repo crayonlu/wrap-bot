@@ -1,10 +1,34 @@
+import { useEffect } from 'react'
 import { useTasks, useTriggerTask } from '../lib/hooks/useQuery'
+import { useWebSocket } from '../lib/hooks/useWebSocket'
+import { useWebSocketStore } from '../stores/websocket'
 import toast from 'react-hot-toast'
-import { Clock, Play, Calendar } from 'lucide-react'
+import { Clock, Play, Calendar, Wifi, WifiOff } from 'lucide-react'
 
 export default function TasksPage() {
-  const { data: tasks, isLoading } = useTasks()
+  const { data: initialTasks, isLoading } = useTasks()
   const triggerTask = useTriggerTask()
+  const { connected } = useWebSocketStore()
+  const tasks = useWebSocketStore((state) => state.tasks)
+  const setTasks = useWebSocketStore((state) => state.setTasks)
+
+  // Initialize tasks from API response
+  useEffect(() => {
+    if (initialTasks && initialTasks.length > 0) {
+      setTasks(initialTasks)
+    }
+  }, [initialTasks, setTasks])
+
+  // WebSocket integration
+  useWebSocket({
+    enabled: true,
+    onMessage: (message) => {
+      if (message.type === 'tasks') {
+        const updatedTasks = message.data as any[]
+        setTasks(updatedTasks)
+      }
+    },
+  })
 
   const handleTrigger = async (id: string, name: string) => {
     try {
@@ -37,8 +61,23 @@ export default function TasksPage() {
   return (
     <div className="tasks">
       <div className="tasks__header">
-        <h1>Tasks</h1>
-        <p>Scheduled tasks and jobs</p>
+        <div>
+          <h1>Tasks</h1>
+          <p>Scheduled tasks and jobs</p>
+        </div>
+        <div className="tasks__connection-status">
+          {connected ? (
+            <span className="tasks__status tasks__status--connected">
+              <Wifi size={16} />
+              Connected
+            </span>
+          ) : (
+            <span className="tasks__status tasks__status--disconnected">
+              <WifiOff size={16} />
+              Disconnected
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="plugins__grid">

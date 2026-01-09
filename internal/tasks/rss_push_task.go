@@ -64,7 +64,7 @@ func (t *RssPushTask) Schedule(sched *scheduler.Scheduler, cfg *config.Config) e
 	})
 
 	if err == nil {
-		sched.RegisterTask(t.Name(), "RSS Daily Push", "0 0 13 * * *", entryID)
+		sched.RegisterTask(t.Name(), "RSS Daily Push", "每日推送 RSS 订阅内容", "0 0 13 * * *", entryID)
 	}
 
 	return err

@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useLogs } from '../lib/hooks/useQuery'
-import { AlertCircle, Info, AlertTriangle, Pause, Play } from 'lucide-react'
+import { useWebSocket } from '../lib/hooks/useWebSocket'
+import { useWebSocketStore } from '../stores/websocket'
+import { AlertCircle, Info, AlertTriangle, Pause, Play, Wifi, WifiOff } from 'lucide-react'
 import Selector from '../components/Selector'
 
 type LogLevel = 'error' | 'warn' | 'info' | 'debug'
@@ -17,10 +19,35 @@ export default function LogsPage() {
   const [limit, setLimit] = useState(100)
   const [autoScroll, setAutoScroll] = useState(true)
   const logsEndRef = useRef<HTMLDivElement>(null)
-  const { data: logs, isLoading } = useLogs(
+  const { data: initialLogs, isLoading } = useLogs(
     selectedLevel === 'all' ? undefined : selectedLevel,
     limit
   )
+  const { connected } = useWebSocketStore()
+  const logs = useWebSocketStore((state) => state.logs)
+  const addLog = useWebSocketStore((state) => state.addLog)
+  const setLogs = useWebSocketStore((state) => state.setLogs)
+
+  // Initialize logs from API response
+  useEffect(() => {
+    if (initialLogs && initialLogs.length > 0) {
+      // API returns logs from new to old, reverse to show old to new
+      setLogs([...initialLogs].reverse())
+    }
+  }, [initialLogs, setLogs])
+
+  // WebSocket integration
+  useWebSocket({
+    enabled: true,
+    onMessage: (message) => {
+      if (message.type === 'log') {
+        const log = message.data as any
+        if (!selectedLevel || selectedLevel === 'all' || log.level === selectedLevel) {
+          addLog(log)
+        }
+      }
+    },
+  })
 
   useEffect(() => {
     if (autoScroll && logsEndRef.current) {
@@ -39,8 +66,23 @@ export default function LogsPage() {
   return (
     <div className="logs">
       <div className="logs__header">
-        <h1>Logs</h1>
-        <p>System logs and events</p>
+        <div>
+          <h1>Logs</h1>
+          <p>System logs and events</p>
+        </div>
+        <div className="logs__connection-status">
+          {connected ? (
+            <span className="logs__status logs__status--connected">
+              <Wifi size={16} />
+              Connected
+            </span>
+          ) : (
+            <span className="logs__status logs__status--disconnected">
+              <WifiOff size={16} />
+              Disconnected
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="logs__filters">

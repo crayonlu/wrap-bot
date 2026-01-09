@@ -66,7 +66,7 @@ func (t *TechPushTask) Schedule(sched *scheduler.Scheduler, cfg *config.Config) 
 	})
 
 	if err == nil {
-		sched.RegisterTask(t.Name(), "Tech Push Daily", "0 0 12 * * *", entryID)
+		sched.RegisterTask(t.Name(), "Tech Push Daily", "每日推送技术新闻", "0 0 12 * * *", entryID)
 	}
 
 	return err

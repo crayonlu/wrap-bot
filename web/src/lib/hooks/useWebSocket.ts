@@ -1,74 +1,86 @@
-import { useEffect, useRef, useCallback } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
+import { useEffect, useRef, useState } from 'react'
 
-interface WebSocketMessage {
+export type WebSocketMessage = {
   type: 'status' | 'log' | 'plugins' | 'tasks'
   data: unknown
 }
 
-export const useWebSocket = () => {
-  const queryClient = useQueryClient()
+export type WebSocketStatus = 'connecting' | 'connected' | 'disconnected' | 'error'
+
+interface UseWebSocketOptions {
+  enabled?: boolean
+  onMessage?: (message: WebSocketMessage) => void
+  onStatusChange?: (status: WebSocketStatus) => void
+}
+
+export function useWebSocket(options: UseWebSocketOptions = {}) {
+  const { enabled = true, onMessage, onStatusChange } = options
+  const [status, setStatus] = useState<WebSocketStatus>('disconnected')
   const wsRef = useRef<WebSocket | null>(null)
-  const reconnectTimeoutRef = useRef<number | undefined>(undefined)
-  const reconnectAttempts = useRef(0)
+  const reconnectTimeoutRef = useRef<number | null>(null)
+  const reconnectAttemptsRef = useRef(0)
+  const MAX_RECONNECT_ATTEMPTS = 5
+  const RECONNECT_DELAY = 3000
 
-  const connect = useCallback(() => {
-    const token = localStorage.getItem('token')
-    if (!token) return
-
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const host = window.location.host
-    const wsUrl = `${protocol}//${host}/api/ws?token=${token}`
-
-    const ws = new WebSocket(wsUrl)
-    wsRef.current = ws
-
-    ws.onopen = () => {
-      console.log('WebSocket connected')
-      reconnectAttempts.current = 0
+  const connect = () => {
+    if (!enabled) {
+      return
     }
 
-    ws.onmessage = (event) => {
-      try {
-        const message: WebSocketMessage = JSON.parse(event.data)
-        
-        switch (message.type) {
-          case 'status':
-            queryClient.setQueryData(['status'], message.data)
-            break
-          case 'log':
-            queryClient.invalidateQueries({ queryKey: ['logs'] })
-            break
-          case 'plugins':
-            queryClient.setQueryData(['plugins'], message.data)
-            break
-          case 'tasks':
-            queryClient.setQueryData(['tasks'], message.data)
-            break
-        }
-      } catch (err) {
-        console.error('Failed to parse WebSocket message:', err)
+    try {
+      const wsUrl = import.meta.env.VITE_WS_URL || `ws://${window.location.host}/api/ws`
+      const token = localStorage.getItem('token')
+
+      const ws = new WebSocket(`${wsUrl}?token=${token}`)
+      wsRef.current = ws
+
+      setStatus('connecting')
+      onStatusChange?.('connecting')
+
+      ws.onopen = () => {
+        console.log('WebSocket connected')
+        setStatus('connected')
+        onStatusChange?.('connected')
+        reconnectAttemptsRef.current = 0
       }
+
+      ws.onmessage = (event) => {
+        try {
+          const message: WebSocketMessage = JSON.parse(event.data)
+          onMessage?.(message)
+        } catch (error) {
+          console.error('Failed to parse WebSocket message:', error)
+        }
+      }
+
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error)
+        setStatus('error')
+        onStatusChange?.('error')
+      }
+
+      ws.onclose = () => {
+        console.log('WebSocket disconnected')
+        setStatus('disconnected')
+        onStatusChange?.('disconnected')
+
+        // Attempt to reconnect
+        if (enabled && reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
+          reconnectAttemptsRef.current++
+          console.log(`Reconnecting... Attempt ${reconnectAttemptsRef.current}/${MAX_RECONNECT_ATTEMPTS}`)
+          reconnectTimeoutRef.current = setTimeout(() => {
+            connect()
+          }, RECONNECT_DELAY)
+        }
+      }
+    } catch (error) {
+      console.error('Failed to create WebSocket connection:', error)
+      setStatus('error')
+      onStatusChange?.('error')
     }
+  }
 
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error)
-    }
-
-    ws.onclose = () => {
-      console.log('WebSocket disconnected')
-      wsRef.current = null
-
-      const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 30000)
-      reconnectAttempts.current++
-
-      reconnectTimeoutRef.current = window.setTimeout(() => {
-        connect()
-      }, delay)
-    }
-  }, [queryClient])
-
-  const disconnect = useCallback(() => {
+  const disconnect = () => {
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current)
     }
@@ -76,12 +88,25 @@ export const useWebSocket = () => {
       wsRef.current.close()
       wsRef.current = null
     }
-  }, [])
+    setStatus('disconnected')
+    onStatusChange?.('disconnected')
+  }
 
   useEffect(() => {
-    connect()
-    return () => disconnect()
-  }, [connect, disconnect])
+    if (enabled) {
+      connect()
+    } else {
+      disconnect()
+    }
 
-  return { isConnected: wsRef.current?.readyState === WebSocket.OPEN }
+    return () => {
+      disconnect()
+    }
+  }, [enabled])
+
+  return {
+    status,
+    connect,
+    disconnect,
+  }
 }

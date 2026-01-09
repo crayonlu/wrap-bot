@@ -1,10 +1,34 @@
+import { useEffect } from 'react'
 import { usePlugins, useTogglePlugin } from '../lib/hooks/useQuery'
+import { useWebSocket } from '../lib/hooks/useWebSocket'
+import { useWebSocketStore } from '../stores/websocket'
 import toast from 'react-hot-toast'
-import { Puzzle } from 'lucide-react'
+import { Puzzle, Wifi, WifiOff } from 'lucide-react'
 
 export default function PluginsPage() {
-  const { data: plugins, isLoading } = usePlugins()
+  const { data: initialPlugins, isLoading } = usePlugins()
   const togglePlugin = useTogglePlugin()
+  const { connected } = useWebSocketStore()
+  const plugins = useWebSocketStore((state) => state.plugins)
+  const setPlugins = useWebSocketStore((state) => state.setPlugins)
+
+  // Initialize plugins from API response
+  useEffect(() => {
+    if (initialPlugins && initialPlugins.length > 0) {
+      setPlugins(initialPlugins)
+    }
+  }, [initialPlugins, setPlugins])
+
+  // WebSocket integration
+  useWebSocket({
+    enabled: true,
+    onMessage: (message) => {
+      if (message.type === 'plugins') {
+        const updatedPlugins = message.data as any[]
+        setPlugins(updatedPlugins)
+      }
+    },
+  })
 
   const handleToggle = async (name: string, currentState: boolean) => {
     try {
@@ -26,8 +50,23 @@ export default function PluginsPage() {
   return (
     <div className="plugins">
       <div className="plugins__header">
-        <h1>Plugins</h1>
-        <p>Manage bot plugins and features</p>
+        <div>
+          <h1>Plugins</h1>
+          <p>Manage bot plugins and features</p>
+        </div>
+        <div className="plugins__connection-status">
+          {connected ? (
+            <span className="plugins__status plugins__status--connected">
+              <Wifi size={16} />
+              Connected
+            </span>
+          ) : (
+            <span className="plugins__status plugins__status--disconnected">
+              <WifiOff size={16} />
+              Disconnected
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="plugins__grid">

@@ -9,10 +9,11 @@ import (
 )
 
 type TaskInfo struct {
-	ID       string
-	Name     string
-	Schedule string
-	EntryID  cron.EntryID
+	ID          string
+	Name        string
+	Schedule    string
+	Description string
+	EntryID     cron.EntryID
 }
 
 type Scheduler struct {
@@ -69,14 +70,15 @@ func cronSpec(hour, minute, second int) string {
 	return fmt.Sprintf("%d %d %d * * *", second, minute, hour)
 }
 
-func (s *Scheduler) RegisterTask(id, name, schedule string, entryID cron.EntryID) {
+func (s *Scheduler) RegisterTask(id, name, schedule, description string, entryID cron.EntryID) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.tasks[id] = &TaskInfo{
-		ID:       id,
-		Name:     name,
-		Schedule: schedule,
-		EntryID:  entryID,
+		ID:          id,
+		Name:        name,
+		Schedule:    schedule,
+		Description: description,
+		EntryID:     entryID,
 	}
 }
 

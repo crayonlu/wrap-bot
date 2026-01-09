@@ -18,9 +18,9 @@ func GetPlugins(c echo.Context) error {
 	plugins := []types.PluginStatus{}
 	for name, info := range pluginsMap {
 		plugins = append(plugins, types.PluginStatus{
-			Name:    name,
-			Enabled: info.Enabled,
-			Discription: info.Description,
+			Name:        name,
+			Enabled:     info.Enabled,
+			Description: info.Description,
 		})
 	}
 	return c.JSON(http.StatusOK, plugins)
@@ -42,8 +42,9 @@ func TogglePlugin(c echo.Context) error {
 		plugins := []types.PluginStatus{}
 		for name, info := range pluginsMap {
 			plugins = append(plugins, types.PluginStatus{
-				Name:    name,
-				Enabled: info.Enabled,
+				Name:        name,
+				Enabled:     info.Enabled,
+				Description: info.Description,
 			})
 		}
 		ctx.WSHub.BroadcastPlugins(plugins)

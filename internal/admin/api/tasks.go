@@ -30,13 +30,14 @@ func GetTasks(c echo.Context) error {
 		}
 
 		tasks = append(tasks, types.TaskStatus{
-			ID:         task.ID,
-			Name:       task.Name,
-			Schedule:   task.Schedule,
-			NextRun:    nextRun,
-			LastRun:    lastRun,
-			Status:     "active",
-			CanTrigger: true,
+			ID:          task.ID,
+			Name:        task.Name,
+			Schedule:    task.Schedule,
+			NextRun:     nextRun,
+			LastRun:     lastRun,
+			Status:      "active",
+			CanTrigger:  true,
+			Description: task.Description,
 		})
 	}
 
@@ -76,13 +77,14 @@ func TriggerTask(c echo.Context) error {
 			}
 
 			tasks = append(tasks, types.TaskStatus{
-				ID:         task.ID,
-				Name:       task.Name,
-				Schedule:   task.Schedule,
-				NextRun:    nextRun,
-				LastRun:    lastRun,
-				Status:     "active",
-				CanTrigger: true,
+				ID:          task.ID,
+				Name:        task.Name,
+				Schedule:    task.Schedule,
+				NextRun:     nextRun,
+				LastRun:     lastRun,
+				Status:      "active",
+				CanTrigger:  true,
+				Description: task.Description,
 			})
 		}
 		ctx.WSHub.BroadcastTasks(tasks)

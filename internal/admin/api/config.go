@@ -9,6 +9,33 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+var configDescriptions = map[string]string{
+	"NAPCAT_HTTP_URL":      "NapCat HTTP API 地址",
+	"NAPCAT_WS_URL":        "NapCat WebSocket 地址",
+	"NAPCAT_HTTP_TOKEN":    "NapCat HTTP 认证令牌",
+	"NAPCAT_WS_TOKEN":      "NapCat WebSocket 认证令牌",
+	"SERVER_PORT":          "管理后台端口",
+	"SERVER_ENABLED":       "是否启用管理后台",
+	"DEBUG":                "DEBUG模式",
+	"COMMAND_PREFIX":       "命令前缀",
+	"AI_ENABLED":           "是否启用 AI 功能",
+	"AI_URL":               "AI API 地址",
+	"AI_KEY":               "AI API 密钥",
+	"AI_MODEL":             "AI 模型名称",
+	"SYSTEM_PROMPT_PATH":   "系统提示词路径",
+	"ANALYZER_PROMPT_PATH": "Analyzer 提示词路径",
+	"HOT_API_HOST":         "热点 API URL",
+	"HOT_API_KEY":          "热点 API 密钥",
+	"RSS_API_HOST":         "RSS API URL",
+	"TECH_PUSH_GROUPS":     "技术推送群号列表（逗号分隔）",
+	"TECH_PUSH_USERS":      "技术推送 QQ 号列表（逗号分隔）",
+	"RSS_PUSH_GROUPS":      "RSS 推送群号列表（逗号分隔）",
+	"RSS_PUSH_USERS":       "RSS 推送 QQ 号列表（逗号分隔）",
+	"ALLOWED_USERS":        "允许的 QQ 号列表（逗号分隔）",
+	"ALLOWED_GROUPS":       "允许的群号列表（逗号分隔）",
+	"ADMIN_IDS":            "管理员 QQ 号列表（逗号分隔）",
+}
+
 func GetConfig(c echo.Context) error {
 	configKeys := []string{
 		"NAPCAT_HTTP_URL",
@@ -40,8 +67,9 @@ func GetConfig(c echo.Context) error {
 	config := make([]types.ConfigItem, 0, len(configKeys))
 	for _, key := range configKeys {
 		config = append(config, types.ConfigItem{
-			Key:   key,
-			Value: os.Getenv(key),
+			Key:         key,
+			Value:       os.Getenv(key),
+			Description: configDescriptions[key],
 		})
 	}
 

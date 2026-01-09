@@ -1,19 +1,20 @@
 package types
 
 type PluginStatus struct {
-	Name    string `json:"name"`
-	Enabled bool   `json:"enabled"`
-	Discription string `json:"discription"`
+	Name        string `json:"name"`
+	Enabled     bool   `json:"enabled"`
+	Description string `json:"description"`
 }
 
 type TaskStatus struct {
-	ID         string `json:"id"`
-	Name       string `json:"name"`
-	Schedule   string `json:"schedule"`
-	NextRun    string `json:"next_run"`
-	LastRun    string `json:"last_run"`
-	Status     string `json:"status"`
-	CanTrigger bool   `json:"can_trigger"`
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Schedule    string `json:"schedule"`
+	NextRun     string `json:"next_run"`
+	LastRun     string `json:"last_run"`
+	Status      string `json:"status"`
+	CanTrigger  bool   `json:"can_trigger"`
+	Description string `json:"description,omitempty"`
 }
 
 type BotStatus struct {
@@ -29,12 +30,14 @@ type ConfigUpdate struct {
 }
 
 type ConfigItem struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
+	Key         string `json:"key"`
+	Value       string `json:"value"`
+	Description string `json:"description,omitempty"`
 }
 
 type LogEntry struct {
-	Timestamp string `json:"timestamp"`
-	Level     string `json:"level"`
-	Message   string `json:"message"`
+	Timestamp string                 `json:"timestamp"`
+	Level     string                 `json:"level"`
+	Message   string                 `json:"message"`
+	Context   map[string]interface{} `json:"context,omitempty"`
 }
