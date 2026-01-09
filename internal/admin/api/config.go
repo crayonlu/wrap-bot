@@ -86,7 +86,12 @@ func UpdateConfig(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request"})
 	}
 
-	envFile := ".env"
+	envFile := os.Getenv("APP_ENV_FILE")
+
+	if envFile == "" {
+		envFile = ".env"
+	}
+
 	content, err := os.ReadFile(envFile)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to read .env"})

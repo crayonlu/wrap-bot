@@ -16,6 +16,8 @@ services:
       - ./data:/app/data
     networks:
       - bot-network
+    environment:
+      - APP_ENV_FILE=/app/configs/.env
 
 networks:
   bot-network:
