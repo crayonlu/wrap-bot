@@ -12,11 +12,17 @@ jobs:
       packages: write
       contents: read
     
+    strategy:
+      matrix:
+        package-name:
+          - 'wrap-bot'
+          - 'bot_golang'
+    
     steps:
       - name: Delete old container images
         uses: actions/delete-package-versions@v5
         with:
-          package-name: 'bot'
+          package-name: ${{ matrix.package-name }}
           package-type: 'container'
-          min-versions-to-keep: 5
+          min-versions-to-keep: 3
           delete-only-untagged-versions: 'false'
