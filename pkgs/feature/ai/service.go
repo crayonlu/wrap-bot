@@ -178,7 +178,6 @@ func (s *AIService) ChatWithImages(conversationID, userMessage string, imageURLs
 		Temperature: s.temperature,
 		TopP:        s.topP,
 		MaxTokens:   s.maxTokens,
-		Tools:       s.toolRegistry.GetTools(),
 	}
 
 	resp, err := s.provider.Complete(req)
