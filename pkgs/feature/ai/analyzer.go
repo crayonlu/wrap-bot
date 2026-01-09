@@ -74,5 +74,9 @@ func (a *Analyzer) Analyze(content string) (string, error) {
 	conversationID := "tech_analysis"
 	a.service.ClearHistory(conversationID)
 
-	return a.service.Chat(conversationID, prompt, true)
+	result, err := a.service.Chat(conversationID, prompt, true)
+	if err != nil {
+		return "", err
+	}
+	return result.Content, nil
 }
