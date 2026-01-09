@@ -81,7 +81,7 @@ func GetConfig(c echo.Context) error {
 }
 
 func UpdateConfig(c echo.Context) error {
-	req := new(types.ConfigUpdate)
+	req := new([]types.ConfigItem)
 	if err := c.Bind(req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request"})
 	}
@@ -93,17 +93,24 @@ func UpdateConfig(c echo.Context) error {
 	}
 
 	lines := strings.Split(string(content), "\n")
-	found := false
-	for i, line := range lines {
-		if strings.HasPrefix(line, req.Key+"=") {
-			lines[i] = req.Key + "=" + req.Value
-			found = true
-			break
-		}
-	}
+	updatedKeys := make(map[string]bool)
 
-	if !found {
-		lines = append(lines, req.Key+"="+req.Value)
+	for _, item := range *req {
+		found := false
+		for i, line := range lines {
+			if strings.HasPrefix(line, item.Key+"=") {
+				lines[i] = item.Key + "=" + item.Value
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			lines = append(lines, item.Key+"="+item.Value)
+		}
+
+		os.Setenv(item.Key, item.Value)
+		updatedKeys[item.Key] = true
 	}
 
 	newContent := strings.Join(lines, "\n")
@@ -111,6 +118,9 @@ func UpdateConfig(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to write .env"})
 	}
 
-	os.Setenv(req.Key, req.Value)
-	return c.JSON(http.StatusOK, map[string]string{"status": "updated"})
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"status":        "updated",
+		"updated_count": len(*req),
+		"updated_keys":  updatedKeys,
+	})
 }

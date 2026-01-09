@@ -8,6 +8,7 @@ export default function ConfigPage() {
   const { data: configData, isLoading } = useConfig()
   const updateConfig = useUpdateConfig()
   const [editedConfig, setEditedConfig] = useState<ConfigItem[]>([])
+  const [originalConfig, setOriginalConfig] = useState<ConfigItem[]>([])
 
   const handleChange = (key: string, value: string) => {
     const updated = [...(editedConfig.length ? editedConfig : configData || [])]
@@ -31,9 +32,21 @@ export default function ConfigPage() {
 
   const handleSave = async () => {
     try {
-      await updateConfig.mutateAsync(editedConfig)
-      toast.success('Configuration updated successfully')
+      const changedItems = editedConfig.filter((item) => {
+        const originalItem = originalConfig.find(o => o.key === item.key)
+        return !originalItem || originalItem.value !== item.value
+      })
+      
+      if (changedItems.length === 0) {
+        toast.success('No changes to save')
+        setEditedConfig([])
+        return
+      }
+
+      await updateConfig.mutateAsync(changedItems)
+      toast.success(`Configuration updated successfully (${changedItems.length} items)`)
       setEditedConfig([])
+      setOriginalConfig(configData || [])
     } catch (error) {
       toast.error('Failed to update configuration')
     }
@@ -55,6 +68,10 @@ export default function ConfigPage() {
         <div className="loading__spinner"></div>
       </div>
     )
+  }
+
+  if (configData && configData.length > 0 && originalConfig.length === 0) {
+    setOriginalConfig(configData)
   }
 
   return (
