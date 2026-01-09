@@ -51,7 +51,7 @@ func AIChatPlugin(cfg *config.Config) bot.HandlerFunc {
 			return
 		}
 
-		var response string
+		var response *ai.ChatResult
 		var err error
 
 		if cfg.AIVisionEnabled {
@@ -71,10 +71,19 @@ func AIChatPlugin(cfg *config.Config) bot.HandlerFunc {
 			return
 		}
 
+		if response.Thinking != "" {
+			thinkingMsg := fmt.Sprintf("thinking: \n---\n%s\n---", response.Thinking)
+			if ctx.Event.IsGroupMessage() {
+				ctx.ReplyAt(thinkingMsg)
+			} else {
+				ctx.ReplyText(thinkingMsg)
+			}
+		}
+
 		if ctx.Event.IsGroupMessage() {
-			ctx.ReplyAt(response)
+			ctx.ReplyAt(response.Content)
 		} else {
-			ctx.ReplyText(response)
+			ctx.ReplyText(response.Content)
 		}
 	}
 }

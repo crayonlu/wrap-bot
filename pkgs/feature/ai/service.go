@@ -10,9 +10,14 @@ import (
 )
 
 type Service interface {
-	Chat(conversationID, userMessage string, addToHistory bool) (string, error)
-	ChatWithImages(conversationID, userMessage string, imageURLs []string, imageDetail string, addToHistory bool) (string, error)
+	Chat(conversationID, userMessage string, addToHistory bool) (*ChatResult, error)
+	ChatWithImages(conversationID, userMessage string, imageURLs []string, imageDetail string, addToHistory bool) (*ChatResult, error)
 	ClearHistory(conversationID string)
+}
+
+type ChatResult struct {
+	Thinking string
+	Content  string
 }
 
 type AIService struct {
@@ -93,7 +98,7 @@ func (s *AIService) getSystemPrompt() string {
 	return s.systemPrompt
 }
 
-func (s *AIService) Chat(conversationID, userMessage string, addToHistory bool) (string, error) {
+func (s *AIService) Chat(conversationID, userMessage string, addToHistory bool) (*ChatResult, error) {
 	userMsg := Message{Role: "user", Content: userMessage}
 
 	if addToHistory {
@@ -119,11 +124,11 @@ func (s *AIService) Chat(conversationID, userMessage string, addToHistory bool) 
 
 	resp, err := s.provider.Complete(req)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	if len(resp.Choices) == 0 {
-		return "", fmt.Errorf("no response from AI")
+		return nil, fmt.Errorf("no response from AI")
 	}
 
 	choice := resp.Choices[0]
@@ -138,12 +143,15 @@ func (s *AIService) Chat(conversationID, userMessage string, addToHistory bool) 
 	}
 
 	if contentStr, ok := choice.Message.Content.(string); ok {
-		return contentStr, nil
+		return &ChatResult{
+			Thinking: choice.Message.ReasoningContent,
+			Content:  contentStr,
+		}, nil
 	}
-	return "", fmt.Errorf("unexpected content type in response")
+	return nil, fmt.Errorf("unexpected content type in response")
 }
 
-func (s *AIService) ChatWithImages(conversationID, userMessage string, imageURLs []string, imageDetail string, addToHistory bool) (string, error) {
+func (s *AIService) ChatWithImages(conversationID, userMessage string, imageURLs []string, imageDetail string, addToHistory bool) (*ChatResult, error) {
 	var content interface{}
 	if len(imageURLs) > 0 {
 		contentItems := []ContentItem{}
@@ -188,11 +196,11 @@ func (s *AIService) ChatWithImages(conversationID, userMessage string, imageURLs
 
 	resp, err := s.provider.Complete(req)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	if len(resp.Choices) == 0 {
-		return "", fmt.Errorf("no response from AI")
+		return nil, fmt.Errorf("no response from AI")
 	}
 
 	choice := resp.Choices[0]
@@ -207,12 +215,15 @@ func (s *AIService) ChatWithImages(conversationID, userMessage string, imageURLs
 	}
 
 	if contentStr, ok := choice.Message.Content.(string); ok {
-		return contentStr, nil
+		return &ChatResult{
+			Thinking: choice.Message.ReasoningContent,
+			Content:  contentStr,
+		}, nil
 	}
-	return "", fmt.Errorf("unexpected content type in response")
+	return nil, fmt.Errorf("unexpected content type in response")
 }
 
-func (s *AIService) handleToolCalls(conversationID string, assistantMsg Message, addToHistory bool) (string, error) {
+func (s *AIService) handleToolCalls(conversationID string, assistantMsg Message, addToHistory bool) (*ChatResult, error) {
 	if addToHistory {
 		s.history.Add(conversationID, assistantMsg)
 	}
@@ -247,7 +258,7 @@ func (s *AIService) handleToolCalls(conversationID string, assistantMsg Message,
 
 	resp, err := s.provider.Complete(req)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	if len(resp.Choices) > 0 {
@@ -256,12 +267,15 @@ func (s *AIService) handleToolCalls(conversationID string, assistantMsg Message,
 			if addToHistory {
 				s.history.Add(conversationID, Message{Role: "assistant", Content: contentStr})
 			}
-			return contentStr, nil
+			return &ChatResult{
+				Thinking: resp.Choices[0].Message.ReasoningContent,
+				Content:  contentStr,
+			}, nil
 		}
-		return "", fmt.Errorf("unexpected content type in response")
+		return nil, fmt.Errorf("unexpected content type in response")
 	}
 
-	return "", fmt.Errorf("no response after tool call")
+	return nil, fmt.Errorf("no response after tool call")
 }
 
 func (s *AIService) ClearHistory(conversationID string) {
