@@ -50,7 +50,20 @@ func AIChatPlugin(cfg *config.Config) bot.HandlerFunc {
 			return
 		}
 
-		response, err := aiService.Chat(conversationID, text, true)
+		var response string
+		var err error
+
+		if cfg.AIVisionEnabled {
+			imageURLs := ctx.Event.GetImages()
+			if len(imageURLs) > 0 {
+				response, err = aiService.ChatWithImages(conversationID, text, imageURLs, cfg.AIImageDetail, true)
+			} else {
+				response, err = aiService.Chat(conversationID, text, true)
+			}
+		} else {
+			response, err = aiService.Chat(conversationID, text, true)
+		}
+
 		if err != nil {
 			logger.Error(fmt.Sprintf("AI chat error: %v", err))
 			ctx.ReplyText("坠机了嘻嘻...")

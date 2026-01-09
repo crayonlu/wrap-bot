@@ -1,5 +1,10 @@
 package bot
 
+import (
+	"regexp"
+	"strings"
+)
+
 type EventType string
 
 const (
@@ -97,4 +102,23 @@ func (e *Event) GetText() string {
 		return e.RawMessage
 	}
 	return ""
+}
+
+func (e *Event) GetImages() []string {
+	if e.RawMessage == "" {
+		return nil
+	}
+
+	re := regexp.MustCompile(`\[CQ:image,[^\]]*url=([^,\]]+)`)
+	matches := re.FindAllStringSubmatch(e.RawMessage, -1)
+
+	var urls []string
+	for _, match := range matches {
+		if len(match) > 1 {
+			url := strings.ReplaceAll(match[1], "&amp;", "&")
+			urls = append(urls, url)
+		}
+	}
+
+	return urls
 }

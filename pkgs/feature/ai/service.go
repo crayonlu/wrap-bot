@@ -11,6 +11,7 @@ import (
 
 type Service interface {
 	Chat(conversationID, userMessage string, addToHistory bool) (string, error)
+	ChatWithImages(conversationID, userMessage string, imageURLs []string, imageDetail string, addToHistory bool) (string, error)
 	ClearHistory(conversationID string)
 }
 
@@ -130,7 +131,80 @@ func (s *AIService) Chat(conversationID, userMessage string, addToHistory bool) 
 		s.history.Add(conversationID, assistantMsg)
 	}
 
-	return choice.Message.Content, nil
+	if contentStr, ok := choice.Message.Content.(string); ok {
+		return contentStr, nil
+	}
+	return "", fmt.Errorf("unexpected content type in response")
+}
+
+func (s *AIService) ChatWithImages(conversationID, userMessage string, imageURLs []string, imageDetail string, addToHistory bool) (string, error) {
+	var content interface{}
+	if len(imageURLs) > 0 {
+		contentItems := []ContentItem{}
+		for _, url := range imageURLs {
+			contentItems = append(contentItems, ContentItem{
+				Type: "image_url",
+				ImageURL: &ImageURL{
+					URL:    url,
+					Detail: imageDetail,
+				},
+			})
+		}
+		if userMessage != "" {
+			contentItems = append(contentItems, ContentItem{
+				Type: "text",
+				Text: userMessage,
+			})
+		}
+		content = contentItems
+	} else {
+		content = userMessage
+	}
+
+	userMsg := Message{Role: "user", Content: content}
+
+	if addToHistory {
+		s.history.Add(conversationID, userMsg)
+	}
+
+	systemPrompt := s.getSystemPrompt()
+	messages := []Message{{Role: "system", Content: systemPrompt}}
+	messages = append(messages, s.history.Get(conversationID)...)
+
+	req := ChatRequest{
+		Model:       s.model,
+		Messages:    messages,
+		Stream:      false,
+		Temperature: s.temperature,
+		TopP:        s.topP,
+		MaxTokens:   s.maxTokens,
+		Tools:       s.toolRegistry.GetTools(),
+	}
+
+	resp, err := s.provider.Complete(req)
+	if err != nil {
+		return "", err
+	}
+
+	if len(resp.Choices) == 0 {
+		return "", fmt.Errorf("no response from AI")
+	}
+
+	choice := resp.Choices[0]
+
+	if len(choice.Message.ToolCalls) > 0 {
+		return s.handleToolCalls(conversationID, choice.Message, addToHistory)
+	}
+
+	if addToHistory {
+		assistantMsg := Message{Role: "assistant", Content: choice.Message.Content}
+		s.history.Add(conversationID, assistantMsg)
+	}
+
+	if contentStr, ok := choice.Message.Content.(string); ok {
+		return contentStr, nil
+	}
+	return "", fmt.Errorf("unexpected content type in response")
 }
 
 func (s *AIService) handleToolCalls(conversationID string, assistantMsg Message, addToHistory bool) (string, error) {
@@ -170,10 +244,13 @@ func (s *AIService) handleToolCalls(conversationID string, assistantMsg Message,
 
 	if len(resp.Choices) > 0 {
 		content := resp.Choices[0].Message.Content
-		if addToHistory {
-			s.history.Add(conversationID, Message{Role: "assistant", Content: content})
+		if contentStr, ok := content.(string); ok {
+			if addToHistory {
+				s.history.Add(conversationID, Message{Role: "assistant", Content: contentStr})
+			}
+			return contentStr, nil
 		}
-		return content, nil
+		return "", fmt.Errorf("unexpected content type in response")
 	}
 
 	return "", fmt.Errorf("no response after tool call")

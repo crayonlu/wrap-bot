@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useConfig, useUpdateConfig } from '../lib/hooks/useQuery'
 import toast from 'react-hot-toast'
-import { Save, Settings } from 'lucide-react'
+import { Save, Settings, ToggleLeft, ToggleRight } from 'lucide-react'
 import type { ConfigItem } from '../lib/api'
 
 export default function ConfigPage() {
@@ -18,6 +18,17 @@ export default function ConfigPage() {
     setEditedConfig(updated)
   }
 
+  const handleToggle = (key: string) => {
+    const updated = [...(editedConfig.length ? editedConfig : configData || [])]
+    const index = updated.findIndex((item) => item.key === key)
+    if (index !== -1) {
+      const currentValue = updated[index].value.toLowerCase()
+      const newValue = currentValue === 'true' ? 'false' : 'true'
+      updated[index] = { ...updated[index], value: newValue }
+    }
+    setEditedConfig(updated)
+  }
+
   const handleSave = async () => {
     try {
       await updateConfig.mutateAsync(editedConfig)
@@ -29,6 +40,14 @@ export default function ConfigPage() {
   }
 
   const displayConfig = editedConfig.length ? editedConfig : configData || []
+
+  const isBooleanConfig = (key: string) => {
+    return key === 'AI_ENABLED' || key === 'AI_VISION_ENABLED' || key === 'SERVER_ENABLED' || key === 'DEBUG'
+  }
+
+  const isSelectConfig = (key: string) => {
+    return key === 'AI_IMAGE_DETAIL'
+  }
 
   if (isLoading) {
     return (
@@ -73,12 +92,52 @@ export default function ConfigPage() {
                   {item.description && (
                     <p style={{fontSize: '0.75rem', color: '#666', marginBottom: '0.5rem'}}>{item.description}</p>
                   )}
-                  <input
-                    type="text"
-                    value={item.value}
-                    onChange={(e) => handleChange(item.key, e.target.value)}
-                    className="login-page__input"
-                  />
+                  {isBooleanConfig(item.key) ? (
+                    <button
+                      onClick={() => handleToggle(item.key)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        padding: '0.5rem 1rem',
+                        border: '1px solid #ddd',
+                        borderRadius: '0.375rem',
+                        background: '#fff',
+                        cursor: 'pointer',
+                        fontSize: '0.875rem'
+                      }}
+                    >
+                      {item.value.toLowerCase() === 'true' ? (
+                        <>
+                          <ToggleRight style={{width: '1.25rem', height: '1.25rem', color: '#22c55e'}} />
+                          <span style={{color: '#22c55e', fontWeight: '500'}}>Enabled</span>
+                        </>
+                      ) : (
+                        <>
+                          <ToggleLeft style={{width: '1.25rem', height: '1.25rem', color: '#ef4444'}} />
+                          <span style={{color: '#ef4444', fontWeight: '500'}}>Disabled</span>
+                        </>
+                      )}
+                    </button>
+                  ) : isSelectConfig(item.key) ? (
+                    <select
+                      value={item.value}
+                      onChange={(e) => handleChange(item.key, e.target.value)}
+                      className="login-page__input"
+                      style={{cursor: 'pointer'}}
+                    >
+                      <option value="auto">Auto</option>
+                      <option value="high">High</option>
+                      <option value="low">Low</option>
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      value={item.value}
+                      onChange={(e) => handleChange(item.key, e.target.value)}
+                      className="login-page__input"
+                    />
+                  )}
                 </div>
               </div>
             </div>

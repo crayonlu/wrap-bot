@@ -22,6 +22,8 @@ type Config struct {
 	AIURL              string
 	AIKey              string
 	AIModel            string
+	AIVisionEnabled    bool
+	AIImageDetail      string
 	SystemPromptPath   string
 	AnalyzerPromptPath string
 	HotApiHost         string
@@ -53,6 +55,8 @@ func Load() *Config {
 		AIURL:              getEnv("AI_URL", "https://api.siliconflow.cn/v1/chat/completions"),
 		AIKey:              getEnv("AI_KEY", "YOUR_API_KEY_HERE"),
 		AIModel:            getEnv("AI_MODEL", "deepseek-ai/DeepSeek-V3.1"),
+		AIVisionEnabled:    getEnvBool("AI_VISION_ENABLED", false),
+		AIImageDetail:      getEnv("AI_IMAGE_DETAIL", "auto"),
 		SystemPromptPath:   getEnv("SYSTEM_PROMPT_PATH", "configs/system_prompt.md"),
 		AnalyzerPromptPath: getEnv("ANALYZER_PROMPT_PATH", "configs/analyzer_prompt.md"),
 		HotApiHost:         getEnv("HOT_API_HOST", "https://hot-api.crayoncreator.top"),
