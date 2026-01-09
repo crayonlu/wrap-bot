@@ -27,6 +27,7 @@ type AIService struct {
 	temperature      float64
 	topP             float64
 	maxTokens        int
+	toolsEnabled     bool
 }
 
 type Config struct {
@@ -38,6 +39,7 @@ type Config struct {
 	Temperature      float64
 	TopP             float64
 	MaxTokens        int
+	ToolsEnabled     bool
 }
 
 func NewService(cfg Config) Service {
@@ -54,6 +56,7 @@ func NewService(cfg Config) Service {
 		temperature:      cfg.Temperature,
 		topP:             cfg.TopP,
 		maxTokens:        cfg.MaxTokens,
+		toolsEnabled:     cfg.ToolsEnabled,
 	}
 }
 
@@ -108,7 +111,10 @@ func (s *AIService) Chat(conversationID, userMessage string, addToHistory bool) 
 		Temperature: s.temperature,
 		TopP:        s.topP,
 		MaxTokens:   s.maxTokens,
-		Tools:       s.toolRegistry.GetTools(),
+	}
+
+	if s.toolsEnabled {
+		req.Tools = s.toolRegistry.GetTools()
 	}
 
 	resp, err := s.provider.Complete(req)
@@ -233,7 +239,10 @@ func (s *AIService) handleToolCalls(conversationID string, assistantMsg Message,
 		Messages:    messages,
 		Stream:      false,
 		Temperature: s.temperature,
-		Tools:       s.toolRegistry.GetTools(),
+	}
+
+	if s.toolsEnabled {
+		req.Tools = s.toolRegistry.GetTools()
 	}
 
 	resp, err := s.provider.Complete(req)

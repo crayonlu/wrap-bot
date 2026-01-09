@@ -23,6 +23,7 @@ func AIChatPlugin(cfg *config.Config) bot.HandlerFunc {
 		Temperature:      0.7,
 		TopP:             0.9,
 		MaxTokens:        2000,
+		ToolsEnabled:     cfg.AIToolsEnabled,
 	})
 
 	return func(ctx *bot.Context) {

@@ -55,7 +55,7 @@ export default function ConfigPage() {
   const displayConfig = editedConfig.length ? editedConfig : configData || []
 
   const isBooleanConfig = (key: string) => {
-    return key === 'AI_ENABLED' || key === 'AI_VISION_ENABLED' || key === 'SERVER_ENABLED' || key === 'DEBUG'
+    return key === 'AI_ENABLED' || key === 'AI_TOOLS_ENABLED' || key === 'AI_VISION_ENABLED' || key === 'SERVER_ENABLED' || key === 'DEBUG'
   }
 
   const isSelectConfig = (key: string) => {
