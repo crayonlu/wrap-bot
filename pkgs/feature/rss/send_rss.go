@@ -5,10 +5,12 @@ import (
 	"html"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/crayon/wrap-bot/internal/config"
 	"github.com/crayon/wrap-bot/pkgs/logger"
 	"github.com/crayon/wrap-bot/pkgs/napcat"
+	"github.com/crayon/wrap-bot/pkgs/utils"
 )
 
 type AIAnalyzer interface {
@@ -48,6 +50,7 @@ func (rp *RssPush) SendRssPush() error {
 	}
 
 	var sendErr error
+	feedIndex := 0
 	for feedID, rss := range feeds {
 		if rss.Channel == nil || len(rss.Channel.Items) == 0 {
 			logger.Warn(fmt.Sprintf("Skipping empty feed: %s", feedID))
@@ -73,20 +76,39 @@ func (rp *RssPush) SendRssPush() error {
 			}
 		}
 
-		for _, groupID := range rp.cfg.RssPushGroups {
-			_, err := napcatClient.SendGroupForwardMsg(groupID, forwardNodes)
+		for groupIndex, groupID := range rp.cfg.RssPushGroups {
+			err := utils.Retry(func() error {
+				_, err := napcatClient.SendGroupForwardMsg(groupID, forwardNodes)
+				return err
+			})
 			if err != nil {
 				logger.Error(fmt.Sprintf("Failed to send RSS %s to group %d: %v", feedID, groupID, err))
 				sendErr = err
 			}
+
+			if groupIndex < len(rp.cfg.RssPushGroups)-1 || len(rp.cfg.RssPushUsers) > 0 {
+				time.Sleep(2 * time.Second)
+			}
 		}
 
-		for _, userID := range rp.cfg.RssPushUsers {
-			_, err := napcatClient.SendPrivateForwardMsg(userID, forwardNodes)
+		for userIndex, userID := range rp.cfg.RssPushUsers {
+			err := utils.Retry(func() error {
+				_, err := napcatClient.SendPrivateForwardMsg(userID, forwardNodes)
+				return err
+			})
 			if err != nil {
 				logger.Error(fmt.Sprintf("Failed to send RSS %s to user %d: %v", feedID, userID, err))
 				sendErr = err
 			}
+
+			if userIndex < len(rp.cfg.RssPushUsers)-1 {
+				time.Sleep(2 * time.Second)
+			}
+		}
+
+		feedIndex++
+		if feedIndex < len(feeds) {
+			time.Sleep(1 * time.Second)
 		}
 	}
 
