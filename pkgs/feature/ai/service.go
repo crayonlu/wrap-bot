@@ -3,6 +3,7 @@ package ai
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"sync"
 	"time"
 
@@ -101,6 +102,20 @@ func (s *AIService) getSystemPrompt() string {
 	return s.systemPrompt
 }
 
+func parseThinkTags(content string) (string, string) {
+	re := regexp.MustCompile(`(?s)<think>(.*?)</think>`)
+	matches := re.FindStringSubmatch(content)
+
+	if len(matches) > 1 {
+		thinkContent := matches[1]
+		cleanContent := re.ReplaceAllString(content, "")
+		cleanContent = regexp.MustCompile(`^\s+|\s+$`).ReplaceAllString(cleanContent, "")
+		return thinkContent, cleanContent
+	}
+
+	return "", content
+}
+
 func (s *AIService) Chat(conversationID, userMessage string, addToHistory bool) (*ChatResult, error) {
 	userMsg := Message{Role: "user", Content: userMessage}
 
@@ -146,9 +161,21 @@ func (s *AIService) Chat(conversationID, userMessage string, addToHistory bool) 
 	}
 
 	if contentStr, ok := choice.Message.Content.(string); ok {
+		thinking := choice.Message.ReasoningContent
+		content := contentStr
+
+		if thinkContent, cleanContent := parseThinkTags(content); thinkContent != "" {
+			if thinking != "" {
+				thinking = thinking + "\n\n" + thinkContent
+			} else {
+				thinking = thinkContent
+			}
+			content = cleanContent
+		}
+
 		return &ChatResult{
-			Thinking: choice.Message.ReasoningContent,
-			Content:  contentStr,
+			Thinking: thinking,
+			Content:  content,
 		}, nil
 	}
 	return nil, fmt.Errorf("unexpected content type in response")
@@ -218,9 +245,21 @@ func (s *AIService) ChatWithImages(conversationID, userMessage string, imageURLs
 	}
 
 	if contentStr, ok := choice.Message.Content.(string); ok {
+		thinking := choice.Message.ReasoningContent
+		content := contentStr
+
+		if thinkContent, cleanContent := parseThinkTags(content); thinkContent != "" {
+			if thinking != "" {
+				thinking = thinking + "\n\n" + thinkContent
+			} else {
+				thinking = thinkContent
+			}
+			content = cleanContent
+		}
+
 		return &ChatResult{
-			Thinking: choice.Message.ReasoningContent,
-			Content:  contentStr,
+			Thinking: thinking,
+			Content:  content,
 		}, nil
 	}
 	return nil, fmt.Errorf("unexpected content type in response")
@@ -270,9 +309,22 @@ func (s *AIService) handleToolCalls(conversationID string, assistantMsg Message,
 			if addToHistory {
 				s.history.Add(conversationID, Message{Role: "assistant", Content: contentStr})
 			}
+
+			thinking := resp.Choices[0].Message.ReasoningContent
+			content := contentStr
+
+			if thinkContent, cleanContent := parseThinkTags(content); thinkContent != "" {
+				if thinking != "" {
+					thinking = thinking + "\n\n" + thinkContent
+				} else {
+					thinking = thinkContent
+				}
+				content = cleanContent
+			}
+
 			return &ChatResult{
-				Thinking: resp.Choices[0].Message.ReasoningContent,
-				Content:  contentStr,
+				Thinking: thinking,
+				Content:  content,
 			}, nil
 		}
 		return nil, fmt.Errorf("unexpected content type in response")
