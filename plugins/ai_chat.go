@@ -7,6 +7,7 @@ import (
 	"github.com/crayon/wrap-bot/pkgs/bot"
 	"github.com/crayon/wrap-bot/pkgs/feature/ai"
 	"github.com/crayon/wrap-bot/pkgs/logger"
+	"github.com/crayon/wrap-bot/pkgs/napcat"
 )
 
 func AIChatPlugin(cfg *config.Config) bot.HandlerFunc {
@@ -72,11 +73,26 @@ func AIChatPlugin(cfg *config.Config) bot.HandlerFunc {
 		}
 
 		if response.Thinking != "" {
-			thinkingMsg := fmt.Sprintf("thinking: \n---\n%s\n---", response.Thinking)
-			if ctx.Event.IsGroupMessage() {
-				ctx.ReplyAt(thinkingMsg)
-			} else {
-				ctx.ReplyText(thinkingMsg)
+			apiClient := ctx.GetAPIClient()
+			if napcatClient, ok := apiClient.(*napcat.Client); ok {
+				thinkingMsg := fmt.Sprintf("thinking: \n---\n%s\n---", response.Thinking)
+				node := napcat.NewMixedForwardNode(
+					"AI Thinking",
+					ctx.Event.SelfID,
+					napcat.NewTextSegment(thinkingMsg),
+				)
+
+				if ctx.Event.IsGroupMessage() {
+					_, err := napcatClient.SendGroupForwardMsg(ctx.Event.GroupID, []napcat.ForwardNode{node})
+					if err != nil {
+						logger.Error(fmt.Sprintf("Failed to send forward message: %v", err))
+					}
+				} else {
+					_, err := napcatClient.SendPrivateForwardMsg(ctx.Event.UserID, []napcat.ForwardNode{node})
+					if err != nil {
+						logger.Error(fmt.Sprintf("Failed to send forward message: %v", err))
+					}
+				}
 			}
 		}
 
