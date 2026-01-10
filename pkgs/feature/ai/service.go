@@ -116,6 +116,35 @@ func parseThinkTags(content string) (string, string) {
 	return "", content
 }
 
+func convertMessagesToText(messages []Message) []Message {
+	result := make([]Message, len(messages))
+	for i, msg := range messages {
+		result[i] = Message{
+			Role:             msg.Role,
+			ReasoningContent: msg.ReasoningContent,
+			ToolCalls:        msg.ToolCalls,
+			ToolCallID:       msg.ToolCallID,
+		}
+
+		if items, ok := msg.Content.([]ContentItem); ok {
+			var textParts []string
+			for _, item := range items {
+				if item.Type == "text" {
+					textParts = append(textParts, item.Text)
+				}
+			}
+			if len(textParts) > 0 {
+				result[i].Content = textParts[0]
+			} else {
+				result[i].Content = ""
+			}
+		} else {
+			result[i].Content = msg.Content
+		}
+	}
+	return result
+}
+
 func (s *AIService) Chat(conversationID, userMessage string, addToHistory bool) (*ChatResult, error) {
 	userMsg := Message{Role: "user", Content: userMessage}
 
@@ -125,7 +154,7 @@ func (s *AIService) Chat(conversationID, userMessage string, addToHistory bool) 
 
 	systemPrompt := s.getSystemPrompt()
 	messages := []Message{{Role: "system", Content: systemPrompt}}
-	messages = append(messages, s.history.Get(conversationID)...)
+	messages = append(messages, convertMessagesToText(s.history.Get(conversationID))...)
 
 	req := ChatRequest{
 		Model:       s.textModel,
@@ -285,7 +314,7 @@ func (s *AIService) handleToolCalls(conversationID string, assistantMsg Message,
 
 	systemPrompt := s.getSystemPrompt()
 	messages := []Message{{Role: "system", Content: systemPrompt}}
-	messages = append(messages, s.history.Get(conversationID)...)
+	messages = append(messages, convertMessagesToText(s.history.Get(conversationID))...)
 
 	req := ChatRequest{
 		Model:       s.textModel,
