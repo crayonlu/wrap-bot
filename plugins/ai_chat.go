@@ -18,7 +18,8 @@ func AIChatPlugin(cfg *config.Config) bot.HandlerFunc {
 	aiService := ai.NewService(ai.Config{
 		APIURL:           cfg.AIURL,
 		APIKey:           cfg.AIKey,
-		Model:            cfg.AIModel,
+		TextModel:        cfg.AITextModel,
+		VisionModel:      cfg.AIVisionModel,
 		SystemPromptPath: cfg.SystemPromptPath,
 		MaxHistory:       20,
 		Temperature:      0.7,
@@ -55,13 +56,9 @@ func AIChatPlugin(cfg *config.Config) bot.HandlerFunc {
 		var response *ai.ChatResult
 		var err error
 
-		if cfg.AIVisionEnabled {
-			imageURLs := ctx.Event.GetImages()
-			if len(imageURLs) > 0 {
-				response, err = aiService.ChatWithImages(conversationID, text, imageURLs, cfg.AIImageDetail, true)
-			} else {
-				response, err = aiService.Chat(conversationID, text, true)
-			}
+		imageURLs := ctx.Event.GetImages()
+		if len(imageURLs) > 0 {
+			response, err = aiService.ChatWithImages(conversationID, text, imageURLs, cfg.AIImageDetail, true)
 		} else {
 			response, err = aiService.Chat(conversationID, text, true)
 		}

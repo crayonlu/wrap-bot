@@ -22,7 +22,8 @@ func NewTechPushTask(cfg *config.Config) *TechPushTask {
 		aiService := ai.NewService(ai.Config{
 			APIURL:           cfg.AIURL,
 			APIKey:           cfg.AIKey,
-			Model:            cfg.AIModel,
+			TextModel:        cfg.AITextModel,
+			VisionModel:      cfg.AIVisionModel,
 			SystemPromptPath: cfg.SystemPromptPath,
 			MaxHistory:       5,
 			Temperature:      0.7,

@@ -24,7 +24,8 @@ type AIService struct {
 	provider         Provider
 	history          History
 	toolRegistry     ToolRegistry
-	model            string
+	textModel        string
+	visionModel      string
 	systemPrompt     string
 	systemPromptPath string
 	promptModTime    time.Time
@@ -38,7 +39,8 @@ type AIService struct {
 type Config struct {
 	APIURL           string
 	APIKey           string
-	Model            string
+	TextModel        string
+	VisionModel      string
 	SystemPromptPath string
 	MaxHistory       int
 	Temperature      float64
@@ -54,7 +56,8 @@ func NewService(cfg Config) Service {
 		provider:         NewHTTPProvider(cfg.APIURL, cfg.APIKey),
 		history:          NewMemoryHistory(cfg.MaxHistory),
 		toolRegistry:     NewDefaultToolRegistry(),
-		model:            cfg.Model,
+		textModel:        cfg.TextModel,
+		visionModel:      cfg.VisionModel,
 		systemPrompt:     systemPrompt,
 		systemPromptPath: cfg.SystemPromptPath,
 		promptModTime:    modTime,
@@ -110,7 +113,7 @@ func (s *AIService) Chat(conversationID, userMessage string, addToHistory bool) 
 	messages = append(messages, s.history.Get(conversationID)...)
 
 	req := ChatRequest{
-		Model:       s.model,
+		Model:       s.textModel,
 		Messages:    messages,
 		Stream:      false,
 		Temperature: s.temperature,
@@ -186,7 +189,7 @@ func (s *AIService) ChatWithImages(conversationID, userMessage string, imageURLs
 	messages = append(messages, s.history.Get(conversationID)...)
 
 	req := ChatRequest{
-		Model:       s.model,
+		Model:       s.visionModel,
 		Messages:    messages,
 		Stream:      false,
 		Temperature: s.temperature,
@@ -246,7 +249,7 @@ func (s *AIService) handleToolCalls(conversationID string, assistantMsg Message,
 	messages = append(messages, s.history.Get(conversationID)...)
 
 	req := ChatRequest{
-		Model:       s.model,
+		Model:       s.textModel,
 		Messages:    messages,
 		Stream:      false,
 		Temperature: s.temperature,

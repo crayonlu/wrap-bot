@@ -21,9 +21,9 @@ type Config struct {
 	AIEnabled          bool
 	AIURL              string
 	AIKey              string
-	AIModel            string
+	AITextModel        string
+	AIVisionModel      string
 	AIToolsEnabled     bool
-	AIVisionEnabled    bool
 	AIImageDetail      string
 	SystemPromptPath   string
 	AnalyzerPromptPath string
@@ -55,9 +55,9 @@ func Load() *Config {
 		AIEnabled:          getEnvBool("AI_ENABLED", false),
 		AIURL:              getEnv("AI_URL", "https://api.siliconflow.cn/v1/chat/completions"),
 		AIKey:              getEnv("AI_KEY", "YOUR_API_KEY_HERE"),
-		AIModel:            getEnv("AI_MODEL", "deepseek-ai/DeepSeek-V3.1"),
+		AITextModel:        getEnv("AI_TEXT_MODEL", "deepseek/deepseek-r1-turbo"),
+		AIVisionModel:      getEnv("AI_VISION_MODEL", "qwen/qwen3-vl-235b-a22b-thinking"),
 		AIToolsEnabled:     getEnvBool("AI_TOOLS_ENABLED", true),
-		AIVisionEnabled:    getEnvBool("AI_VISION_ENABLED", false),
 		AIImageDetail:      getEnv("AI_IMAGE_DETAIL", "auto"),
 		SystemPromptPath:   getEnv("SYSTEM_PROMPT_PATH", "configs/system_prompt.md"),
 		AnalyzerPromptPath: getEnv("ANALYZER_PROMPT_PATH", "configs/analyzer_prompt.md"),
