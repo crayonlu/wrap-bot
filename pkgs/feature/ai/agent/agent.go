@@ -10,6 +10,7 @@ import (
 	"github.com/crayon/wrap-bot/pkgs/feature/ai/memory"
 	"github.com/crayon/wrap-bot/pkgs/feature/ai/provider"
 	"github.com/crayon/wrap-bot/pkgs/feature/ai/tool"
+	"github.com/crayon/wrap-bot/pkgs/logger"
 )
 
 type AgentConfig struct {
@@ -42,12 +43,16 @@ func NewChatAgent(cfg AgentConfig) *ChatAgent {
 }
 
 func (a *ChatAgent) Chat(ctx context.Context, conversationID, message string) (*ChatResult, error) {
+	logger.Info(fmt.Sprintf("[Chat] ConversationID: %s, Message: %s", conversationID, message))
+
 	userMsg := memory.Message{Role: "user", Content: message}
 	a.config.History.AddMessage(conversationID, userMsg)
 
 	messages := []memory.Message{{Role: "system", Content: a.config.SystemPrompt}}
 	history, _ := a.config.History.GetHistory(conversationID)
 	messages = append(messages, history...)
+
+	logger.Info(fmt.Sprintf("[Chat] History size: %d messages", len(history)))
 
 	req := ai.ChatRequest{
 		Model:       a.config.TextModel,
@@ -61,20 +66,26 @@ func (a *ChatAgent) Chat(ctx context.Context, conversationID, message string) (*
 	tools := a.getToolsForModel("text")
 	if len(tools) > 0 {
 		req.Tools = convertToolsToChatRequest(tools)
+		logger.Info(fmt.Sprintf("[Chat] Added %d tool(s) to request", len(tools)))
 	}
 
 	resp, err := a.config.Provider.Complete(ctx, req)
 	if err != nil {
+		logger.Error(fmt.Sprintf("[Chat] API request failed: %v", err))
 		return nil, err
 	}
 
 	if len(resp.Choices) == 0 {
+		logger.Error("[Chat] No response from AI")
 		return nil, fmt.Errorf("no response from AI")
 	}
 
 	choice := resp.Choices[0]
 
+	logger.Info(fmt.Sprintf("[Chat] Choice: %+v", choice))
+
 	if len(choice.Message.ToolCalls) > 0 {
+		logger.Info(fmt.Sprintf("[Chat] Model requested %d tool call(s)", len(choice.Message.ToolCalls)))
 		return a.handleToolCalls(ctx, conversationID, choice.Message)
 	}
 
@@ -103,6 +114,8 @@ func (a *ChatAgent) Chat(ctx context.Context, conversationID, message string) (*
 }
 
 func (a *ChatAgent) ChatWithImages(ctx context.Context, conversationID, message string, imageURLs []string) (*ChatResult, error) {
+	logger.Info(fmt.Sprintf("[ChatWithImages] ConversationID: %s, Message: %s, Images: %d", conversationID, message, len(imageURLs)))
+
 	var content interface{}
 	if len(imageURLs) > 0 {
 		contentItems := []ai.ContentItem{}
@@ -132,6 +145,7 @@ func (a *ChatAgent) ChatWithImages(ctx context.Context, conversationID, message 
 	messages := []memory.Message{{Role: "system", Content: a.config.SystemPrompt}}
 	history, _ := a.config.History.GetHistory(conversationID)
 	filteredHistory := filterToolCallMessages(history)
+	logger.Info(fmt.Sprintf("[ChatWithImages] History size: %d -> %d (after filtering tool calls)", len(history), len(filteredHistory)))
 	messages = append(messages, filteredHistory...)
 
 	req := ai.ChatRequest{
@@ -146,20 +160,25 @@ func (a *ChatAgent) ChatWithImages(ctx context.Context, conversationID, message 
 	tools := a.getToolsForModel("vision")
 	if len(tools) > 0 {
 		req.Tools = convertToolsToChatRequest(tools)
+		logger.Info(fmt.Sprintf("[ChatWithImages] Added %d tool(s) to request", len(tools)))
 	}
 
 	resp, err := a.config.Provider.Complete(ctx, req)
 	if err != nil {
+		logger.Error(fmt.Sprintf("[ChatWithImages] API request failed: %v", err))
 		return nil, err
 	}
 
 	if len(resp.Choices) == 0 {
+		logger.Error("[ChatWithImages] No response from AI")
 		return nil, fmt.Errorf("no response from AI")
 	}
 
 	choice := resp.Choices[0]
+	logger.Info(fmt.Sprintf("[Chat] Choice: %+v", choice))
 
 	if len(choice.Message.ToolCalls) > 0 {
+		logger.Info(fmt.Sprintf("[ChatWithImages] Model requested %d tool call(s)", len(choice.Message.ToolCalls)))
 		return a.handleToolCalls(ctx, conversationID, choice.Message)
 	}
 
@@ -215,6 +234,8 @@ func (a *ChatAgent) getToolsForModel(modelType string) []tool.Tool {
 }
 
 func (a *ChatAgent) handleToolCalls(ctx context.Context, conversationID string, assistantMsg ai.Message) (*ChatResult, error) {
+	logger.Info(fmt.Sprintf("[ToolCall] Received %d tool call(s)", len(assistantMsg.ToolCalls)))
+
 	assistantMemoryMsg := memory.Message{
 		Role:      "assistant",
 		Content:   assistantMsg.Content,
@@ -223,9 +244,14 @@ func (a *ChatAgent) handleToolCalls(ctx context.Context, conversationID string, 
 	a.config.History.AddMessage(conversationID, assistantMemoryMsg)
 
 	for _, toolCall := range assistantMsg.ToolCalls {
+		logger.Info(fmt.Sprintf("[ToolCall] Executing tool: %s with args: %s", toolCall.Function.Name, toolCall.Function.Arguments))
+
 		result, err := a.config.ToolRegistry.Execute(ctx, toolCall.Function.Name, toolCall.Function.Arguments)
 		if err != nil {
+			logger.Error(fmt.Sprintf("[ToolCall] Tool %s execution failed: %v", toolCall.Function.Name, err))
 			result = fmt.Sprintf("Error: %v", err)
+		} else {
+			logger.Info(fmt.Sprintf("[ToolCall] Tool %s executed successfully, result length: %d", toolCall.Function.Name, len(result)))
 		}
 
 		toolMsg := memory.Message{
@@ -235,6 +261,8 @@ func (a *ChatAgent) handleToolCalls(ctx context.Context, conversationID string, 
 		}
 		a.config.History.AddMessage(conversationID, toolMsg)
 	}
+
+	logger.Info("[ToolCall] Sending final request to model with tool results")
 
 	messages := []ai.Message{{Role: "system", Content: a.config.SystemPrompt}}
 	history, _ := a.config.History.GetHistory(conversationID)

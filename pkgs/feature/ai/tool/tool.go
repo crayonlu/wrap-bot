@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"sync"
+
+	"github.com/crayon/wrap-bot/pkgs/logger"
 )
 
 type ToolCategory string
@@ -105,14 +107,26 @@ func (r *DefaultToolRegistry) GetEnabled() []Tool {
 }
 
 func (r *DefaultToolRegistry) Execute(ctx context.Context, name string, args string) (string, error) {
+	logger.Info(fmt.Sprintf("[ToolRegistry] Executing tool: %s", name))
+
 	tool, exists := r.Get(name)
 	if !exists {
+		logger.Error(fmt.Sprintf("[ToolRegistry] Tool not found: %s", name))
 		return "", fmt.Errorf("tool not found")
 	}
 
 	if !tool.Enabled {
+		logger.Warn(fmt.Sprintf("[ToolRegistry] Tool is disabled: %s", name))
 		return "", fmt.Errorf("tool is disabled")
 	}
 
-	return tool.Handler(ctx, args)
+	logger.Info(fmt.Sprintf("[ToolRegistry] Tool %s is enabled, executing with args: %s", name, args))
+	result, err := tool.Handler(ctx, args)
+	if err != nil {
+		logger.Error(fmt.Sprintf("[ToolRegistry] Tool %s execution error: %v", name, err))
+	} else {
+		logger.Info(fmt.Sprintf("[ToolRegistry] Tool %s executed successfully", name))
+	}
+
+	return result, err
 }
