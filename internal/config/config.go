@@ -39,6 +39,10 @@ type Config struct {
 	AdminUsername      string
 	AdminPassword      string
 	JWTSecret          string
+	SerpAPIKey        string
+	WeatherAPIKey     string
+	AITextTools       []string
+	AIVisionTools     []string
 }
 
 func Load() *Config {
@@ -73,6 +77,10 @@ func Load() *Config {
 		AdminUsername:      getEnv("ADMIN_USERNAME", "admin"),
 		AdminPassword:      getEnv("ADMIN_PASSWORD", ""),
 		JWTSecret:          getEnv("JWT_SECRET", ""),
+		SerpAPIKey:        getEnv("SERP_API_KEY", ""),
+		WeatherAPIKey:     getEnv("WEATHER_API_KEY", ""),
+		AITextTools:       getEnvStringSlice("AI_TEXT_MODEL_TOOLS", []string{}),
+		AIVisionTools:     getEnvStringSlice("AI_VISION_MODEL_TOOLS", []string{}),
 	}
 }
 
@@ -117,6 +125,29 @@ func getEnvInt64Slice(key string, defaultValue []int64) []int64 {
 		}
 
 		result = append(result, num)
+	}
+
+	if len(result) == 0 {
+		return defaultValue
+	}
+
+	return result
+}
+
+func getEnvStringSlice(key string, defaultValue []string) []string {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
+	}
+
+	parts := strings.Split(value, ",")
+	result := make([]string, 0, len(parts))
+
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if part != "" {
+			result = append(result, part)
+		}
 	}
 
 	if len(result) == 0 {

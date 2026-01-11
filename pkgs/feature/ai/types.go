@@ -1,5 +1,10 @@
 package ai
 
+import (
+	"github.com/crayon/wrap-bot/pkgs/feature/ai/memory"
+	"github.com/crayon/wrap-bot/pkgs/feature/ai/tool"
+)
+
 type ContentItem struct {
 	Type     string    `json:"type"`
 	Text     string    `json:"text,omitempty"`
@@ -62,4 +67,31 @@ type ChatResponse struct {
 		CompletionTokens int `json:"completion_tokens"`
 		TotalTokens      int `json:"total_tokens"`
 	} `json:"usage"`
+}
+
+func ConvertMessagesToChatRequest(messages []memory.Message) []Message {
+	result := make([]Message, 0, len(messages))
+	for _, msg := range messages {
+		result = append(result, Message{
+			Role:             msg.Role,
+			Content:          msg.Content,
+			ReasoningContent: "",
+		})
+	}
+	return result
+}
+
+func ConvertToolsToChatRequest(tools []tool.Tool) []Tool {
+	result := make([]Tool, 0, len(tools))
+	for _, t := range tools {
+		result = append(result, Tool{
+			Type:     "function",
+			Function: FunctionDef{
+				Name:        t.Name,
+				Description: t.Description,
+				Parameters:  t.Parameters,
+			},
+		})
+	}
+	return result
 }
