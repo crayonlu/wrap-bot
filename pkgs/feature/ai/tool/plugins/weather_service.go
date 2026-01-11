@@ -21,7 +21,7 @@ func NewWeatherAPIClient(apiKey string) *WeatherAPIClient {
 }
 
 func (c *WeatherAPIClient) GetCurrentWeather(ctx context.Context, city string) (*Weather, error) {
-	url := fmt.Sprintf("http://api.weatherapi.com/v1/current.json?key=%s&q=%s&aqi=no", c.apiKey, city)
+	url := fmt.Sprintf("https://api.weatherapi.com/v1/current.json?key=%s&q=%s&aqi=no", c.apiKey, city)
 
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
@@ -45,12 +45,12 @@ func (c *WeatherAPIClient) GetCurrentWeather(ctx context.Context, city string) (
 
 	var weatherResp struct {
 		Current struct {
-			TempC      float64 `json:"temp_c"`
-			Condition   struct {
+			TempC     float64 `json:"temp_c"`
+			Condition struct {
 				Text string `json:"text"`
 			} `json:"condition"`
-			WindKmph   float64 `json:"wind_kph"`
-			Humidity   int    `json:"humidity"`
+			WindKmph float64 `json:"wind_kph"`
+			Humidity int     `json:"humidity"`
 		} `json:"current"`
 		Location struct {
 			Name string `json:"name"`
@@ -78,7 +78,7 @@ func (c *WeatherAPIClient) GetForecast(ctx context.Context, city string, days in
 		days = 7
 	}
 
-	url := fmt.Sprintf("http://api.weatherapi.com/v1/forecast.json?key=%s&q=%s&days=%d&aqi=no", c.apiKey, city, days)
+	url := fmt.Sprintf("https://api.weatherapi.com/v1/forecast.json?key=%s&q=%s&days=%d&aqi=no", c.apiKey, city, days)
 
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
@@ -106,10 +106,10 @@ func (c *WeatherAPIClient) GetForecast(ctx context.Context, city string, days in
 		} `json:"location"`
 		Forecast struct {
 			Forecastday []struct {
-				Date  string `json:"date"`
-				Day   struct {
-					MaxtempC float64 `json:"maxtemp_c"`
-					MintempC float64 `json:"mintemp_c"`
+				Date string `json:"date"`
+				Day  struct {
+					MaxtempC  float64 `json:"maxtemp_c"`
+					MintempC  float64 `json:"mintemp_c"`
 					Condition struct {
 						Text string `json:"text"`
 					} `json:"condition"`
@@ -158,7 +158,7 @@ type Forecast struct {
 }
 
 type DayWeather struct {
-	Date string
+	Date        string
 	Temperature struct {
 		Min float64
 		Max float64
