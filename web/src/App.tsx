@@ -9,6 +9,9 @@ import TasksPage from './pages/TasksPage'
 import ConfigPage from './pages/ConfigPage'
 import LogsPage from './pages/LogsPage'
 import PresetsPage from './pages/PresetsPage'
+import AIToolsPage from './pages/AIToolsPage'
+import AIChatPage from './pages/AIChatPage'
+import AIStatsPage from './pages/AIStatsPage'
 import MainLayout from './components/layout/MainLayout'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -38,6 +41,9 @@ function App() {
           <Route path="config" element={<ConfigPage />} />
           <Route path="logs" element={<LogsPage />} />
           <Route path="presets" element={<PresetsPage />} />
+          <Route path="ai/tools" element={<AIToolsPage />} />
+          <Route path="ai/chat" element={<AIChatPage />} />
+          <Route path="ai/stats" element={<AIStatsPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

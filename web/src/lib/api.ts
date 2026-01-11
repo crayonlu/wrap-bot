@@ -77,6 +77,54 @@ export interface LogEntry {
   context?: Record<string, unknown>
 }
 
+export interface AITool {
+  name: string
+  description: string
+  category: 'text' | 'vision' | 'both'
+  enabled: boolean
+}
+
+export interface AIStats {
+  total_calls: number
+  tool_usage: Record<string, number>
+  success_rate: number
+  recent_calls: AICallRecord[]
+}
+
+export interface AICallRecord {
+  timestamp: string
+  model: string
+  tools_used: string[]
+  success: boolean
+  duration_ms: number
+}
+
+export interface AIChatRequest {
+  message: string
+  images?: string[]
+  model: 'text' | 'vision'
+  conversation_id?: string
+}
+
+export interface AIChatResponse {
+  response: string
+  tool_calls?: ToolCall[]
+  conversation_id: string
+}
+
+export interface ToolCall {
+  name: string
+  arguments: string
+}
+
+export interface AIChatMessage {
+  role: 'user' | 'assistant'
+  content: string
+  images?: string[]
+  tool_calls?: ToolCall[]
+  timestamp: string
+}
+
 export const authAPI = {
   login: (data: LoginRequest) => 
     api.post<LoginResponse>('/api/auth/login', data),
@@ -102,8 +150,15 @@ export const configAPI = {
 }
 
 export const logsAPI = {
-  list: (params?: { level?: string; limit?: number }) => 
+  list: (params?: { level?: string; limit?: number }) =>
     api.get<LogEntry[]>('/api/logs', { params }),
+}
+
+export const aiAPI = {
+  getTools: () => api.get<AITool[]>('/api/ai/tools'),
+  getStats: () => api.get<AIStats>('/api/ai/stats'),
+  chat: (data: AIChatRequest) => api.post<AIChatResponse>('/api/ai/chat', data),
+  chatWithImage: (data: AIChatRequest) => api.post<AIChatResponse>('/api/ai/chat/image', data),
 }
 
 export default api

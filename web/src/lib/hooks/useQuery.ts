@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { statusAPI, pluginsAPI, tasksAPI, configAPI, logsAPI } from '../api'
+import { statusAPI, pluginsAPI, tasksAPI, configAPI, logsAPI, aiAPI } from '../api'
 
 export const useStatus = () => {
   return useQuery({
@@ -80,5 +80,39 @@ export const useLogs = (level?: string, limit?: number) => {
       return response.data
     },
     refetchInterval: 10000,
+  })
+}
+
+export const useAITools = () => {
+  return useQuery({
+    queryKey: ['ai-tools'],
+    queryFn: async () => {
+      const response = await aiAPI.getTools()
+      return response.data
+    },
+  })
+}
+
+export const useAIStats = () => {
+  return useQuery({
+    queryKey: ['ai-stats'],
+    queryFn: async () => {
+      const response = await aiAPI.getStats()
+      return response.data
+    },
+  })
+}
+
+export const useAIChat = () => {
+  return useMutation({
+    mutationFn: (data: { message: string; model: 'text' | 'vision'; conversation_id?: string }) =>
+      aiAPI.chat(data),
+  })
+}
+
+export const useAIChatWithImage = () => {
+  return useMutation({
+    mutationFn: (data: { message: string; images: string[]; model: 'text' | 'vision'; conversation_id?: string }) =>
+      aiAPI.chatWithImage(data),
   })
 }

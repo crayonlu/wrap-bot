@@ -5,7 +5,9 @@ import (
 
 	"github.com/crayon/wrap-bot/internal/config"
 	"github.com/crayon/wrap-bot/pkgs/bot"
-	"github.com/crayon/wrap-bot/pkgs/feature/ai"
+	aiconfig "github.com/crayon/wrap-bot/pkgs/feature/ai/config"
+	"github.com/crayon/wrap-bot/pkgs/feature/ai/factory"
+	"github.com/crayon/wrap-bot/pkgs/feature/analyzer"
 	"github.com/crayon/wrap-bot/pkgs/feature/rss"
 	"github.com/crayon/wrap-bot/pkgs/logger"
 )
@@ -13,23 +15,30 @@ import (
 var rssPushService *rss.RssPush
 
 func RssPushPlugin(cfg *config.Config) bot.HandlerFunc {
-	var aiAnalyzer rss.AIAnalyzer
+	var aiAnalyzer *analyzer.Analyzer
 
 	if cfg.AIEnabled {
-		aiService := ai.NewService(ai.Config{
+		aiCfg := &aiconfig.Config{
 			APIURL:           cfg.AIURL,
 			APIKey:           cfg.AIKey,
 			TextModel:        cfg.AITextModel,
 			VisionModel:      cfg.AIVisionModel,
-			SystemPromptPath: cfg.SystemPromptPath,
-			MaxHistory:       5,
 			Temperature:      0.7,
 			TopP:             0.9,
 			MaxTokens:        2000,
-		})
+			TextTools:        cfg.AITextTools,
+			VisionTools:      cfg.AIVisionTools,
+			MaxHistory:       5,
+			SystemPromptPath: cfg.SystemPromptPath,
+			SerpAPIKey:       cfg.SerpAPIKey,
+			WeatherAPIKey:    cfg.WeatherAPIKey,
+		}
 
-		aiAnalyzer = ai.NewAnalyzer(ai.AnalyzerConfig{
-			Service:            aiService,
+		factory := factory.NewFactory(aiCfg)
+		chatAgent := factory.CreateAgent()
+
+		aiAnalyzer = analyzer.NewAnalyzer(analyzer.AnalyzerConfig{
+			Agent:              chatAgent,
 			AnalyzerPromptPath: cfg.AnalyzerPromptPath,
 		})
 	}
@@ -46,7 +55,6 @@ func RssPushPlugin(cfg *config.Config) bot.HandlerFunc {
 				}
 			}()
 			return
-
 		}
 		ctx.Next()
 	}

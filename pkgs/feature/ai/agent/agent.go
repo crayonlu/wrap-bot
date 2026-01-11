@@ -235,7 +235,7 @@ func (a *ChatAgent) handleToolCalls(ctx context.Context, conversationID string, 
 
 	messages := []ai.Message{{Role: "system", Content: a.config.SystemPrompt}}
 	history, _ := a.config.History.GetHistory(conversationID)
-	messages = append(messages, ai.ConvertMessagesToChatRequest(history)...)
+	messages = append(messages, convertMessagesToChatRequest(history)...)
 
 	req := ai.ChatRequest{
 		Model:       a.config.TextModel,
@@ -246,7 +246,7 @@ func (a *ChatAgent) handleToolCalls(ctx context.Context, conversationID string, 
 
 	tools := a.getToolsForModel("text")
 	if len(tools) > 0 {
-		req.Tools = ai.ConvertToolsToChatRequest(tools)
+		req.Tools = convertToolsToChatRequest(tools)
 	}
 
 	resp, err := a.config.Provider.Complete(ctx, req)

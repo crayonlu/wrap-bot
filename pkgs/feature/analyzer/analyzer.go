@@ -1,16 +1,18 @@
-package ai
+package analyzer
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"sync"
 	"time"
 
+	"github.com/crayon/wrap-bot/pkgs/feature/ai/agent"
 	"github.com/crayon/wrap-bot/pkgs/logger"
 )
 
 type Analyzer struct {
-	service               Service
+	agent                 *agent.ChatAgent
 	analyzerPrompt        string
 	analyzerPromptPath    string
 	analyzerPromptModTime time.Time
@@ -18,14 +20,14 @@ type Analyzer struct {
 }
 
 type AnalyzerConfig struct {
-	Service            Service
+	Agent              *agent.ChatAgent
 	AnalyzerPromptPath string
 }
 
 func NewAnalyzer(cfg AnalyzerConfig) *Analyzer {
 	analyzerPrompt, modTime := loadAnalyzerPromptWithTime(cfg.AnalyzerPromptPath)
 	return &Analyzer{
-		service:               cfg.Service,
+		agent:                 cfg.Agent,
 		analyzerPrompt:        analyzerPrompt,
 		analyzerPromptPath:    cfg.AnalyzerPromptPath,
 		analyzerPromptModTime: modTime,
@@ -72,9 +74,9 @@ func (a *Analyzer) Analyze(content string) (string, error) {
 %s`, analyzerPrompt, content)
 
 	conversationID := "tech_analysis"
-	a.service.ClearHistory(conversationID)
+	a.agent.ClearHistory(conversationID)
 
-	result, err := a.service.Chat(conversationID, prompt, true)
+	result, err := a.agent.Chat(context.Background(), conversationID, prompt)
 	if err != nil {
 		return "", err
 	}

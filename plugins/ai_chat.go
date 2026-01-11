@@ -1,11 +1,14 @@
 package plugins
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/crayon/wrap-bot/internal/config"
 	"github.com/crayon/wrap-bot/pkgs/bot"
-	"github.com/crayon/wrap-bot/pkgs/feature/ai"
+	"github.com/crayon/wrap-bot/pkgs/feature/ai/agent"
+	aiconfig "github.com/crayon/wrap-bot/pkgs/feature/ai/config"
+	"github.com/crayon/wrap-bot/pkgs/feature/ai/factory"
 	"github.com/crayon/wrap-bot/pkgs/logger"
 	"github.com/crayon/wrap-bot/pkgs/napcat"
 )
@@ -15,18 +18,24 @@ func AIChatPlugin(cfg *config.Config) bot.HandlerFunc {
 		return func(ctx *bot.Context) {}
 	}
 
-	aiService := ai.NewService(ai.Config{
+	aiCfg := &aiconfig.Config{
 		APIURL:           cfg.AIURL,
 		APIKey:           cfg.AIKey,
 		TextModel:        cfg.AITextModel,
 		VisionModel:      cfg.AIVisionModel,
-		SystemPromptPath: cfg.SystemPromptPath,
-		MaxHistory:       20,
 		Temperature:      0.7,
 		TopP:             0.9,
 		MaxTokens:        2000,
-		ToolsEnabled:     cfg.AIToolsEnabled,
-	})
+		TextTools:        cfg.AITextTools,
+		VisionTools:      cfg.AIVisionTools,
+		MaxHistory:       20,
+		SystemPromptPath: cfg.SystemPromptPath,
+		SerpAPIKey:       cfg.SerpAPIKey,
+		WeatherAPIKey:    cfg.WeatherAPIKey,
+	}
+
+	factory := factory.NewFactory(aiCfg)
+	chatAgent := factory.CreateAgent()
 
 	return func(ctx *bot.Context) {
 		if !ctx.Event.IsGroupMessage() && !ctx.Event.IsPrivateMessage() {
@@ -48,19 +57,19 @@ func AIChatPlugin(cfg *config.Config) bot.HandlerFunc {
 		}
 
 		if text == "清除历史" || text == "reset" {
-			aiService.ClearHistory(conversationID)
+			chatAgent.ClearHistory(conversationID)
 			ctx.ReplyText("空空如也了")
 			return
 		}
 
-		var response *ai.ChatResult
+		var response *agent.ChatResult
 		var err error
 
 		imageURLs := ctx.Event.GetImages()
 		if len(imageURLs) > 0 {
-			response, err = aiService.ChatWithImages(conversationID, text, imageURLs, cfg.AIImageDetail, true)
+			response, err = chatAgent.ChatWithImages(context.Background(), conversationID, text, imageURLs)
 		} else {
-			response, err = aiService.Chat(conversationID, text, true)
+			response, err = chatAgent.Chat(context.Background(), conversationID, text)
 		}
 
 		if err != nil {

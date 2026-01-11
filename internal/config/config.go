@@ -23,7 +23,6 @@ type Config struct {
 	AIKey              string
 	AITextModel        string
 	AIVisionModel      string
-	AIToolsEnabled     bool
 	AIImageDetail      string
 	SystemPromptPath   string
 	AnalyzerPromptPath string
@@ -39,14 +38,14 @@ type Config struct {
 	AdminUsername      string
 	AdminPassword      string
 	JWTSecret          string
-	SerpAPIKey        string
-	WeatherAPIKey     string
-	AITextTools       []string
-	AIVisionTools     []string
+	SerpAPIKey         string
+	WeatherAPIKey      string
+	AITextTools        []string
+	AIVisionTools      []string
 }
 
 func Load() *Config {
-	return &Config{
+	cfg := &Config{
 		NapCatHTTPURL:      getEnv("NAPCAT_HTTP_URL", "http://localhost:3000"),
 		NapCatWSURL:        getEnv("NAPCAT_WS_URL", "ws://localhost:3001"),
 		NapCatHTTPToken:    getEnv("NAPCAT_HTTP_TOKEN", ""),
@@ -61,7 +60,6 @@ func Load() *Config {
 		AIKey:              getEnv("AI_KEY", "YOUR_API_KEY_HERE"),
 		AITextModel:        getEnv("AI_TEXT_MODEL", "deepseek/deepseek-r1-turbo"),
 		AIVisionModel:      getEnv("AI_VISION_MODEL", "qwen/qwen3-vl-235b-a22b-thinking"),
-		AIToolsEnabled:     getEnvBool("AI_TOOLS_ENABLED", true),
 		AIImageDetail:      getEnv("AI_IMAGE_DETAIL", "auto"),
 		SystemPromptPath:   getEnv("SYSTEM_PROMPT_PATH", "configs/system_prompt.md"),
 		AnalyzerPromptPath: getEnv("ANALYZER_PROMPT_PATH", "configs/analyzer_prompt.md"),
@@ -77,11 +75,44 @@ func Load() *Config {
 		AdminUsername:      getEnv("ADMIN_USERNAME", "admin"),
 		AdminPassword:      getEnv("ADMIN_PASSWORD", ""),
 		JWTSecret:          getEnv("JWT_SECRET", ""),
-		SerpAPIKey:        getEnv("SERP_API_KEY", ""),
-		WeatherAPIKey:     getEnv("WEATHER_API_KEY", ""),
-		AITextTools:       getEnvStringSlice("AI_TEXT_MODEL_TOOLS", []string{}),
-		AIVisionTools:     getEnvStringSlice("AI_VISION_MODEL_TOOLS", []string{}),
+		SerpAPIKey:         getEnv("SERP_API_KEY", ""),
+		WeatherAPIKey:      getEnv("WEATHER_API_KEY", ""),
+		AITextTools:        getEnvStringSlice("AI_TEXT_MODEL_TOOLS", []string{}),
+		AIVisionTools:      getEnvStringSlice("AI_VISION_MODEL_TOOLS", []string{}),
 	}
+
+	logger.Info("================================================")
+	logger.Info("Loaded configuration:")
+	logger.Info("================================================")
+	logger.Info("  NapCatHTTPURL: " + cfg.NapCatHTTPURL)
+	logger.Info("  NapCatWSURL: " + cfg.NapCatWSURL)
+	logger.Info("  ServerPort: " + cfg.ServerPort)
+	logger.Info("  ServerEnabled: " + strconv.FormatBool(cfg.ServerEnabled))
+	logger.Info("  Debug: " + strconv.FormatBool(cfg.Debug))
+	logger.Info("  AdminIDs: " + strings.Join(int64SliceToString(cfg.AdminIDs), ","))
+	logger.Info("  CommandPrefix: " + cfg.CommandPrefix)
+	logger.Info("  AIEnabled: " + strconv.FormatBool(cfg.AIEnabled))
+	logger.Info("  AIURL: " + cfg.AIURL)
+	logger.Info("  AITextModel: " + cfg.AITextModel)
+	logger.Info("  AIVisionModel: " + cfg.AIVisionModel)
+	logger.Info("  AIImageDetail: " + cfg.AIImageDetail)
+	logger.Info("  SystemPromptPath: " + cfg.SystemPromptPath)
+	logger.Info("  AnalyzerPromptPath: " + cfg.AnalyzerPromptPath)
+	logger.Info("  HotApiHost: " + cfg.HotApiHost)
+	logger.Info("  TechPushGroups: " + strings.Join(int64SliceToString(cfg.TechPushGroups), ","))
+	logger.Info("  TechPushUsers: " + strings.Join(int64SliceToString(cfg.TechPushUsers), ","))
+	logger.Info("  RssPushGroups: " + strings.Join(int64SliceToString(cfg.RssPushGroups), ","))
+	logger.Info("  RssPushUsers: " + strings.Join(int64SliceToString(cfg.RssPushUsers), ","))
+	logger.Info("  AllowedUsers: " + strings.Join(int64SliceToString(cfg.AllowedUsers), ","))
+	logger.Info("  AllowedGroups: " + strings.Join(int64SliceToString(cfg.AllowedGroups), ","))
+	logger.Info("  RSSApiHost: " + cfg.RSSApiHost)
+	logger.Info("  AdminUsername: " + cfg.AdminUsername)
+	logger.Info("  SerpAPIKey: " + maskKey(cfg.SerpAPIKey))
+	logger.Info("  WeatherAPIKey: " + maskKey(cfg.WeatherAPIKey))
+	logger.Info("  AITextTools: " + strings.Join(cfg.AITextTools, ","))
+	logger.Info("  AIVisionTools: " + strings.Join(cfg.AIVisionTools, ","))
+	logger.Info("================================================")
+	return cfg
 }
 
 func getEnv(key, defaultValue string) string {
@@ -155,4 +186,22 @@ func getEnvStringSlice(key string, defaultValue []string) []string {
 	}
 
 	return result
+}
+
+func int64SliceToString(slice []int64) []string {
+	result := make([]string, len(slice))
+	for i, v := range slice {
+		result[i] = strconv.FormatInt(v, 10)
+	}
+	return result
+}
+
+func maskKey(key string) string {
+	if key == "" {
+		return "(empty)"
+	}
+	if len(key) <= 4 {
+		return "***"
+	}
+	return key[:2] + "***" + key[len(key)-2:]
 }
