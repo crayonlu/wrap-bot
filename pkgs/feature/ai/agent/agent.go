@@ -131,7 +131,8 @@ func (a *ChatAgent) ChatWithImages(ctx context.Context, conversationID, message 
 
 	messages := []memory.Message{{Role: "system", Content: a.config.SystemPrompt}}
 	history, _ := a.config.History.GetHistory(conversationID)
-	messages = append(messages, history...)
+	filteredHistory := filterToolCallMessages(history)
+	messages = append(messages, filteredHistory...)
 
 	req := ai.ChatRequest{
 		Model:       a.config.VisionModel,
@@ -215,8 +216,9 @@ func (a *ChatAgent) getToolsForModel(modelType string) []tool.Tool {
 
 func (a *ChatAgent) handleToolCalls(ctx context.Context, conversationID string, assistantMsg ai.Message) (*ChatResult, error) {
 	assistantMemoryMsg := memory.Message{
-		Role:    "assistant",
-		Content: assistantMsg.Content,
+		Role:      "assistant",
+		Content:   assistantMsg.Content,
+		ToolCalls: convertToolCallsToMemory(assistantMsg.ToolCalls),
 	}
 	a.config.History.AddMessage(conversationID, assistantMemoryMsg)
 
@@ -227,8 +229,9 @@ func (a *ChatAgent) handleToolCalls(ctx context.Context, conversationID string, 
 		}
 
 		toolMsg := memory.Message{
-			Role:    "tool",
-			Content: result,
+			Role:       "tool",
+			Content:    result,
+			ToolCallID: toolCall.ID,
 		}
 		a.config.History.AddMessage(conversationID, toolMsg)
 	}
@@ -292,12 +295,64 @@ func contains(slice []string, item string) bool {
 	return false
 }
 
+func filterToolCallMessages(messages []memory.Message) []memory.Message {
+	result := make([]memory.Message, 0, len(messages))
+	for _, msg := range messages {
+		if msg.Role == "assistant" && len(msg.ToolCalls) > 0 {
+			cleanMsg := memory.Message{
+				Role:    msg.Role,
+				Content: msg.Content,
+			}
+			result = append(result, cleanMsg)
+			continue
+		}
+		if msg.Role == "tool" {
+			continue
+		}
+		result = append(result, msg)
+	}
+	return result
+}
+
 func convertMessagesToChatRequest(messages []memory.Message) []ai.Message {
 	result := make([]ai.Message, 0, len(messages))
 	for _, msg := range messages {
-		result = append(result, ai.Message{
-			Role:    msg.Role,
-			Content: msg.Content,
+		aiMsg := ai.Message{
+			Role:       msg.Role,
+			Content:    msg.Content,
+			ToolCalls:  convertToolCallsToAI(msg.ToolCalls),
+			ToolCallID: msg.ToolCallID,
+		}
+		result = append(result, aiMsg)
+	}
+	return result
+}
+
+func convertToolCallsToMemory(toolCalls []ai.ToolCall) []memory.ToolCall {
+	result := make([]memory.ToolCall, 0, len(toolCalls))
+	for _, tc := range toolCalls {
+		result = append(result, memory.ToolCall{
+			ID:   tc.ID,
+			Type: tc.Type,
+			Function: memory.FunctionCall{
+				Name:      tc.Function.Name,
+				Arguments: tc.Function.Arguments,
+			},
+		})
+	}
+	return result
+}
+
+func convertToolCallsToAI(toolCalls []memory.ToolCall) []ai.ToolCall {
+	result := make([]ai.ToolCall, 0, len(toolCalls))
+	for _, tc := range toolCalls {
+		result = append(result, ai.ToolCall{
+			ID:   tc.ID,
+			Type: tc.Type,
+			Function: ai.FunctionCall{
+				Name:      tc.Function.Name,
+				Arguments: tc.Function.Arguments,
+			},
 		})
 	}
 	return result

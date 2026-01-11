@@ -3,8 +3,21 @@ package memory
 import "sync"
 
 type Message struct {
-	Role    string
-	Content interface{}
+	Role       string
+	Content    interface{}
+	ToolCalls  []ToolCall `json:"tool_calls,omitempty"`
+	ToolCallID string     `json:"tool_call_id,omitempty"`
+}
+
+type ToolCall struct {
+	ID       string       `json:"id"`
+	Type     string       `json:"type"`
+	Function FunctionCall `json:"function"`
+}
+
+type FunctionCall struct {
+	Name      string `json:"name"`
+	Arguments string `json:"arguments"`
 }
 
 type ConversationStore interface {
