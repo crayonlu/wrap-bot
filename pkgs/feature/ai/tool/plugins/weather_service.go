@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/crayon/wrap-bot/pkgs/logger"
@@ -28,8 +29,9 @@ func (c *WeatherAPIClient) GetCurrentWeather(ctx context.Context, city string) (
 		return nil, fmt.Errorf("WeatherAPI error: API Key is not configured")
 	}
 
-	url := fmt.Sprintf("https://api.weatherapi.com/v1/current.json?key=%s&q=%s&aqi=no", c.apiKey, city)
-	logger.Info(fmt.Sprintf("[WeatherAPI] Requesting weather for city: %s", city))
+	encodedCity := url.QueryEscape(city)
+	url := fmt.Sprintf("https://api.weatherapi.com/v1/current.json?key=%s&q=%s&aqi=no", c.apiKey, encodedCity)
+	logger.Info(fmt.Sprintf("[WeatherAPI] Requesting weather for city: %s (encoded: %s)", city, encodedCity))
 	logger.Debug(fmt.Sprintf("[WeatherAPI] Request URL: %s", url))
 
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
