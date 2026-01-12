@@ -8,7 +8,6 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/crayon/wrap-bot/pkgs/logger"
 )
 
 type WeatherAPIClient struct {
@@ -25,39 +24,30 @@ func NewWeatherAPIClient(apiKey string) *WeatherAPIClient {
 
 func (c *WeatherAPIClient) GetCurrentWeather(ctx context.Context, city string) (*Weather, error) {
 	if c.apiKey == "" {
-		logger.Error("[WeatherAPI] API Key is empty")
 		return nil, fmt.Errorf("WeatherAPI error: API Key is not configured")
 	}
 
 	encodedCity := url.QueryEscape(city)
 	url := fmt.Sprintf("https://api.weatherapi.com/v1/current.json?key=%s&q=%s&aqi=no", c.apiKey, encodedCity)
-	logger.Info(fmt.Sprintf("[WeatherAPI] Requesting weather for city: %s (encoded: %s)", city, encodedCity))
-	logger.Debug(fmt.Sprintf("[WeatherAPI] Request URL: %s", url))
 
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
-		logger.Error(fmt.Sprintf("[WeatherAPI] Failed to create request: %v", err))
 		return nil, err
 	}
 
 	resp, err := c.client.Do(req)
 	if err != nil {
-		logger.Error(fmt.Sprintf("[WeatherAPI] Failed to execute request: %v", err))
 		return nil, err
 	}
 	defer resp.Body.Close()
 
 	body, err := readAll(resp.Body)
 	if err != nil {
-		logger.Error(fmt.Sprintf("[WeatherAPI] Failed to read response body: %v", err))
 		return nil, err
 	}
 
-	logger.Info(fmt.Sprintf("[WeatherAPI] Response status: %d", resp.StatusCode))
-	logger.Debug(fmt.Sprintf("[WeatherAPI] Response body: %s", string(body)))
 
 	if resp.StatusCode != 200 {
-		logger.Error(fmt.Sprintf("[WeatherAPI] API returned error %d: %s", resp.StatusCode, string(body)))
 		return nil, fmt.Errorf("WeatherAPI error %d: %s", resp.StatusCode, string(body))
 	}
 
@@ -76,15 +66,8 @@ func (c *WeatherAPIClient) GetCurrentWeather(ctx context.Context, city string) (
 	}
 
 	if err := json.Unmarshal(body, &weatherResp); err != nil {
-		logger.Error(fmt.Sprintf("[WeatherAPI] Failed to parse JSON response: %v", err))
-		logger.Error(fmt.Sprintf("[WeatherAPI] Response body: %s", string(body)))
 		return nil, err
 	}
-
-	logger.Info(fmt.Sprintf("[WeatherAPI] Successfully retrieved weather for %s: %.1f°C, %s",
-		weatherResp.Location.Name,
-		weatherResp.Current.TempC,
-		weatherResp.Current.Condition.Text))
 
 	return &Weather{
 		City:        weatherResp.Location.Name,
@@ -104,38 +87,30 @@ func (c *WeatherAPIClient) GetForecast(ctx context.Context, city string, days in
 	}
 
 	if c.apiKey == "" {
-		logger.Error("[WeatherAPI] API Key is empty")
 		return nil, fmt.Errorf("WeatherAPI error: API Key is not configured")
 	}
 
-	url := fmt.Sprintf("https://api.weatherapi.com/v1/forecast.json?key=%s&q=%s&days=%d&aqi=no", c.apiKey, city, days)
-	logger.Info(fmt.Sprintf("[WeatherAPI] Requesting forecast for city: %s, days: %d", city, days))
-	logger.Debug(fmt.Sprintf("[WeatherAPI] Request URL: %s", url))
+	encodedCity := url.QueryEscape(city)
+	url := fmt.Sprintf("https://api.weatherapi.com/v1/forecast.json?key=%s&q=%s&days=%d&aqi=no", c.apiKey, encodedCity, days)
 
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
-		logger.Error(fmt.Sprintf("[WeatherAPI] Failed to create request: %v", err))
 		return nil, err
 	}
 
 	resp, err := c.client.Do(req)
 	if err != nil {
-		logger.Error(fmt.Sprintf("[WeatherAPI] Failed to execute request: %v", err))
 		return nil, err
 	}
 	defer resp.Body.Close()
 
 	body, err := readAll(resp.Body)
 	if err != nil {
-		logger.Error(fmt.Sprintf("[WeatherAPI] Failed to read response body: %v", err))
 		return nil, err
 	}
 
-	logger.Info(fmt.Sprintf("[WeatherAPI] Response status: %d", resp.StatusCode))
-	logger.Debug(fmt.Sprintf("[WeatherAPI] Response body: %s", string(body)))
 
 	if resp.StatusCode != 200 {
-		logger.Error(fmt.Sprintf("[WeatherAPI] API returned error %d: %s", resp.StatusCode, string(body)))
 		return nil, fmt.Errorf("WeatherAPI error %d: %s", resp.StatusCode, string(body))
 	}
 
@@ -158,14 +133,8 @@ func (c *WeatherAPIClient) GetForecast(ctx context.Context, city string, days in
 	}
 
 	if err := json.Unmarshal(body, &forecastResp); err != nil {
-		logger.Error(fmt.Sprintf("[WeatherAPI] Failed to parse JSON response: %v", err))
-		logger.Error(fmt.Sprintf("[WeatherAPI] Response body: %s", string(body)))
 		return nil, err
 	}
-
-	logger.Info(fmt.Sprintf("[WeatherAPI] Successfully retrieved forecast for %s: %d days",
-		forecastResp.Location.Name,
-		len(forecastResp.Forecast.Forecastday)))
 
 	result := &Forecast{
 		City: forecastResp.Location.Name,

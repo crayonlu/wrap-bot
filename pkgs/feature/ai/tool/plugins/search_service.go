@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -26,19 +27,15 @@ func (c *SerpAPIClient) Search(ctx context.Context, query string, numResults int
 		numResults = 5
 	}
 
-	reqBody := map[string]interface{}{
-		"q":       query,
-		"num":     numResults,
-		"engine":  "google",
-		"api_key": c.apiKey,
-	}
+	params := url.Values{}
+	params.Set("q", query)
+	params.Set("num", fmt.Sprintf("%d", numResults))
+	params.Set("engine", "google")
+	params.Set("api_key", c.apiKey)
 
-	jsonData, err := json.Marshal(reqBody)
-	if err != nil {
-		return nil, err
-	}
+	fullURL := "https://serpapi.com/search?" + params.Encode()
 
-	req, err := http.NewRequestWithContext(ctx, "GET", "https://serpapi.com/search?"+string(jsonData), nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", fullURL, nil)
 	if err != nil {
 		return nil, err
 	}

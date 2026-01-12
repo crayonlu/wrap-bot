@@ -50,7 +50,9 @@ func (a *ChatAgent) Chat(ctx context.Context, conversationID, message string) (*
 
 	messages := []memory.Message{{Role: "system", Content: a.config.SystemPrompt}}
 	history, _ := a.config.History.GetHistory(conversationID)
-	messages = append(messages, history...)
+	filteredHistory := filterImageMessages(history)
+	logger.Info(fmt.Sprintf("[Chat] History size: %d -> %d (after filtering images)", len(history), len(filteredHistory)))
+	messages = append(messages, filteredHistory...)
 
 	logger.Info(fmt.Sprintf("[Chat] History size: %d messages", len(history)))
 
@@ -335,6 +337,30 @@ func filterToolCallMessages(messages []memory.Message) []memory.Message {
 			continue
 		}
 		if msg.Role == "tool" {
+			continue
+		}
+		result = append(result, msg)
+	}
+	return result
+}
+
+func filterImageMessages(messages []memory.Message) []memory.Message {
+	result := make([]memory.Message, 0, len(messages))
+	for _, msg := range messages {
+		if contentItems, ok := msg.Content.([]ai.ContentItem); ok {
+			var textParts []string
+			for _, item := range contentItems {
+				if item.Type == "text" && item.Text != "" {
+					textParts = append(textParts, item.Text)
+				}
+			}
+			if len(textParts) > 0 {
+				cleanMsg := memory.Message{
+					Role:    msg.Role,
+					Content: strings.Join(textParts, "\n"),
+				}
+				result = append(result, cleanMsg)
+			}
 			continue
 		}
 		result = append(result, msg)
