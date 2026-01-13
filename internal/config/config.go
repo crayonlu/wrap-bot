@@ -86,6 +86,8 @@ func Load() *Config {
 		JWTSecret:          getEnv("JWT_SECRET", ""),
 		SerpAPIKey:         getEnv("SERP_API_KEY", ""),
 		WeatherAPIKey:      getEnv("WEATHER_API_KEY", ""),
+		AITextToolsEnabled:   getEnvStringSlice("AI_TEXT_MODEL_TOOLS", []string{}),
+		AIVisionToolsEnabled: getEnvStringSlice("AI_VISION_MODEL_TOOLS", []string{}),
 	}
 
 	logger.Info("================================================")
