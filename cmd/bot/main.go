@@ -15,10 +15,19 @@ import (
 	"github.com/crayon/wrap-bot/pkgs/logger"
 	"github.com/crayon/wrap-bot/pkgs/napcat"
 	"github.com/crayon/wrap-bot/plugins"
+	"github.com/joho/godotenv"
 )
 
 func main() {
 	logger.SetupStdLogger()
+
+	envFile := os.Getenv("APP_ENV_FILE")
+	if envFile == "" {
+		envFile = ".env"
+	}
+	if err := godotenv.Load(envFile); err != nil {
+		logger.Warn("Failed to load .env file: " + err.Error())
+	}
 
 	cfg := config.Load()
 
