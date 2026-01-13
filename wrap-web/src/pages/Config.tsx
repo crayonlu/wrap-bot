@@ -132,7 +132,7 @@ export function Config() {
         <div className="text-center py-8 text-muted-foreground">加载中...</div>
       ) : (
         <Tabs defaultValue="NapCat" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8">
+          <TabsList className="grid h-auto w-full grid-cols-4 lg:grid-cols-8">
             {Object.keys(configCategories).map((category) => (
               <TabsTrigger key={category} value={category}>
                 {category}

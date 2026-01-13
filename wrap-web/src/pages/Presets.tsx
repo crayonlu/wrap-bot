@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
-import { FileCode, Save, Eye } from 'lucide-react';
+import { FileCode, Save } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { apiClient } from '@/lib/api';
 import { toast } from 'sonner';
 import type { Preset } from '@/types/api';
@@ -12,7 +11,6 @@ export function Presets() {
   const [presets, setPresets] = useState<Preset[]>([]);
   const [selectedPreset, setSelectedPreset] = useState<Preset | null>(null);
   const [content, setContent] = useState('');
-  const [previewContent, setPreviewContent] = useState('');
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -59,10 +57,6 @@ export function Presets() {
     }
   };
 
-  const handlePreview = () => {
-    setPreviewContent(content);
-  };
-
   return (
     <div className="space-y-6">
       <div>
@@ -107,24 +101,6 @@ export function Presets() {
               {selectedPreset ? selectedPreset.name : '选择预设文件'}
             </CardTitle>
             <div className="flex gap-2">
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="outline" onClick={handlePreview} disabled={!selectedPreset} className="min-h-[44px]">
-                    <Eye className="mr-2 h-4 w-4" />
-                    预览
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl">
-                  <DialogHeader>
-                    <DialogTitle>预览: {selectedPreset?.name}</DialogTitle>
-                  </DialogHeader>
-                  <div className="max-h-[500px] overflow-auto rounded-lg border p-4">
-                    <pre className="whitespace-pre-wrap font-mono text-sm">
-                      {previewContent}
-                    </pre>
-                  </div>
-                </DialogContent>
-              </Dialog>
               <Button onClick={handleSave} disabled={!selectedPreset || saving} className="min-h-[44px]">
                 <Save className="mr-2 h-4 w-4" />
                 {saving ? '保存中...' : '保存'}
