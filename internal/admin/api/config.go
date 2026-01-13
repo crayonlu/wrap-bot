@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/crayon/wrap-bot/internal/admin/types"
 	"github.com/labstack/echo/v4"
@@ -143,8 +144,14 @@ func UpdateConfig(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to write .env"})
 	}
 
+	go func() {
+		time.Sleep(3 * time.Second)
+		os.Exit(0)
+	}()
+
 	return c.JSON(http.StatusOK, map[string]interface{}{
-		"status":        "updated",
+		"status":        "restarting",
+		"message":       "配置已更新，容器将在 3 秒后重启",
 		"updated_count": len(*req),
 		"updated_keys":  updatedKeys,
 	})

@@ -106,8 +106,9 @@ export interface UpdateConfigRequest {
 
 export interface UpdateConfigResponse {
   status: string;
-  updated_count: number;
-  updated_keys: Record<string, boolean>;
+  message?: string;
+  updated_count?: number;
+  updated_keys?: Record<string, boolean>;
 }
 
 export interface UpdatePresetRequest {

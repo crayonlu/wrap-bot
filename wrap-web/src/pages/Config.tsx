@@ -70,10 +70,20 @@ export function Config() {
 
     try {
       setSaving(true);
-      await apiClient.updateConfig(updates);
-      toast.success('配置已保存');
-      setEditedConfigs({});
-      await fetchConfigs();
+      const response = await apiClient.updateConfig(updates);
+      
+      if (response.status === 'restarting') {
+        toast.success(response.message || '配置已保存，容器正在重启...');
+        setEditedConfigs({});
+        
+        setTimeout(() => {
+          window.location.reload();
+        }, 5000);
+      } else {
+        toast.success('配置已保存');
+        setEditedConfigs({});
+        await fetchConfigs();
+      }
     } catch (error: any) {
       toast.error(error.response?.data?.error || '保存配置失败');
     } finally {
