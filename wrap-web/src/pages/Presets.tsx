@@ -66,12 +66,11 @@ export function Presets() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">预设管理</h1>
+        <h1 className="text-2xl lg:text-3xl font-bold">预设管理</h1>
         <p className="text-muted-foreground">管理系统预设文件</p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* 预设列表 */}
         <Card className="lg:col-span-1">
           <CardHeader>
             <CardTitle>预设文件</CardTitle>
@@ -102,16 +101,15 @@ export function Presets() {
           </CardContent>
         </Card>
 
-        {/* 编辑器 */}
         <Card className="lg:col-span-2">
-          <CardHeader className="flex items-center justify-between">
+          <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <CardTitle>
               {selectedPreset ? selectedPreset.name : '选择预设文件'}
             </CardTitle>
             <div className="flex gap-2">
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button variant="outline" onClick={handlePreview} disabled={!selectedPreset}>
+                  <Button variant="outline" onClick={handlePreview} disabled={!selectedPreset} className="min-h-[44px]">
                     <Eye className="mr-2 h-4 w-4" />
                     预览
                   </Button>
@@ -127,7 +125,7 @@ export function Presets() {
                   </div>
                 </DialogContent>
               </Dialog>
-              <Button onClick={handleSave} disabled={!selectedPreset || saving}>
+              <Button onClick={handleSave} disabled={!selectedPreset || saving} className="min-h-[44px]">
                 <Save className="mr-2 h-4 w-4" />
                 {saving ? '保存中...' : '保存'}
               </Button>

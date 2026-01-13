@@ -95,11 +95,10 @@ export function AI() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">AI功能</h1>
+        <h1 className="text-2xl lg:text-3xl font-bold">AI功能</h1>
         <p className="text-muted-foreground">AI工具和对话测试</p>
       </div>
 
-      {/* 统计卡片 */}
       {stats && (
         <div className="grid gap-4 md:grid-cols-3">
           <Card>
@@ -139,9 +138,8 @@ export function AI() {
         </div>
       )}
 
-      {/* 工具列表和对话测试 */}
       <Tabs defaultValue="tools" className="space-y-4">
-        <TabsList>
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="tools">工具列表</TabsTrigger>
           <TabsTrigger value="text-chat">文本对话</TabsTrigger>
           <TabsTrigger value="image-chat">图像对话</TabsTrigger>
@@ -157,7 +155,7 @@ export function AI() {
                 {tools.map((tool) => (
                   <div
                     key={tool.name}
-                    className="flex items-center justify-between rounded-lg border p-4"
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-lg border p-4"
                   >
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
@@ -199,7 +197,7 @@ export function AI() {
                   rows={4}
                 />
               </div>
-              <Button onClick={handleTextChat} disabled={loading}>
+              <Button onClick={handleTextChat} disabled={loading} className="min-h-[44px] w-full sm:w-auto">
                 {loading ? '发送中...' : '发送'}
               </Button>
               {textResponse && (
@@ -240,7 +238,7 @@ export function AI() {
                   rows={3}
                 />
               </div>
-              <Button onClick={handleImageChat} disabled={loading}>
+              <Button onClick={handleImageChat} disabled={loading} className="min-h-[44px] w-full sm:w-auto">
                 <ImageIcon className="mr-2 h-4 w-4" />
                 {loading ? '发送中...' : '发送'}
               </Button>

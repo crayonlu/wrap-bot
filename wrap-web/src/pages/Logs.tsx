@@ -80,17 +80,17 @@ export function Logs() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">日志查看</h1>
+          <h1 className="text-2xl lg:text-3xl font-bold">日志查看</h1>
           <p className="text-muted-foreground">查看Bot运行日志</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleClear}>
+          <Button variant="outline" onClick={handleClear} className="min-h-[44px]">
             <Trash2 className="mr-2 h-4 w-4" />
             清空
           </Button>
-          <Button variant="outline" onClick={handleExport}>
+          <Button variant="outline" onClick={handleExport} className="min-h-[44px]">
             <Download className="mr-2 h-4 w-4" />
             导出
           </Button>
@@ -99,13 +99,13 @@ export function Logs() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <CardTitle>日志流</CardTitle>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
               <div className="flex items-center gap-2">
                 <Filter className="h-4 w-4 text-muted-foreground" />
                 <Select value={levelFilter} onValueChange={setLevelFilter}>
-                  <SelectTrigger className="w-[120px]">
+                  <SelectTrigger className="w-[120px] min-h-[44px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -130,7 +130,7 @@ export function Logs() {
           </div>
         </CardHeader>
         <CardContent>
-          <ScrollArea className="h-[600px] w-full rounded-md border p-4">
+          <ScrollArea className="h-[500px] lg:h-[600px] w-full rounded-md border p-4">
             <div ref={scrollRef} className="space-y-2 font-mono text-sm">
               {filteredLogs.length === 0 ? (
                 <div className="flex h-full items-center justify-center text-muted-foreground">

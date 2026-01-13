@@ -36,11 +36,10 @@ export function Dashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">仪表盘</h1>
+        <h1 className="text-2xl lg:text-3xl font-bold">仪表盘</h1>
         <p className="text-muted-foreground">Bot运行状态</p>
       </div>
 
-      {/* 状态卡片 */}
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

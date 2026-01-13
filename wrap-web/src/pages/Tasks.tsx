@@ -59,7 +59,7 @@ export function Tasks() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">任务管理</h1>
+        <h1 className="text-2xl lg:text-3xl font-bold">任务管理</h1>
         <p className="text-muted-foreground">管理定时任务</p>
       </div>
 
@@ -92,7 +92,7 @@ export function Tasks() {
               </div>
               {task.can_trigger && (
                 <Button
-                  className="w-full"
+                  className="w-full min-h-[44px]"
                   onClick={() => handleTrigger(task.id, task.name)}
                 >
                   <Play className="mr-2 h-4 w-4" />

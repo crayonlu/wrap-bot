@@ -28,7 +28,7 @@ export function Sidebar() {
   const { logout } = useAuth();
 
   return (
-    <div className="flex h-full w-64 flex-col border-r bg-card">
+    <div className="hidden lg:flex h-full w-64 flex-col border-r bg-card">
       <div className="flex h-16 items-center border-b px-6">
         <h1 className="text-xl font-bold">就你是管理员啊？</h1>
       </div>
@@ -41,7 +41,7 @@ export function Sidebar() {
               key={item.name}
               to={item.href}
               className={cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors min-h-[44px]',
                 isActive
                   ? 'bg-primary text-primary-foreground'
                   : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
@@ -57,7 +57,7 @@ export function Sidebar() {
       <div className="border-t p-4">
         <Button
           variant="ghost"
-          className="w-full justify-start gap-3"
+          className="w-full justify-start gap-3 min-h-[44px]"
           onClick={logout}
         >
           <LogOut className="h-5 w-5" />
