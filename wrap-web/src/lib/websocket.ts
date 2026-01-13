@@ -13,7 +13,7 @@ class WebSocketClient {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
   connect(token: string) {
-    const wsUrl = `${import.meta.env.VITE_WS_URL || 'ws://localhost:8080'}/ws?token=${token}`;
+    const wsUrl = `${import.meta.env.VITE_WS_URL || ''}/ws?token=${token}`;
     
     try {
       this.ws = new WebSocket(wsUrl);
