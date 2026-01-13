@@ -6,3 +6,5 @@ ppio.txt
 ARCHITECTURE.md
 llms.md
 build
+.cursor
+node_modules

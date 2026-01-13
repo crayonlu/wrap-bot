@@ -22,16 +22,23 @@ func NewTechPushTask(cfg *config.Config) *TechPushTask {
 
 	if cfg.AIEnabled {
 		aiCfg := &aiconfig.Config{
-			APIURL:           cfg.AIURL,
-			APIKey:           cfg.AIKey,
-			TextModel:        cfg.AITextModel,
-			VisionModel:      cfg.AIVisionModel,
-			Temperature:      0.7,
-			TopP:             0.9,
-			MaxTokens:        2000,
-			TextTools:        cfg.AITextTools,
-			VisionTools:      cfg.AIVisionTools,
-			MaxHistory:       5,
+			APIURL: cfg.AIURL,
+			APIKey: cfg.AIKey,
+
+			AIUnifiedModel: cfg.AIUnifiedModel,
+			AIUseUnified:   cfg.AIUseUnified,
+
+			TextModel:   cfg.AITextModel,
+			VisionModel: cfg.AIVisionModel,
+
+			Temperature: 0.7,
+			TopP:        0.9,
+			MaxTokens:   2000,
+			MaxHistory:  5,
+
+			TextToolsEnabled:   cfg.AITextToolsEnabled,
+			VisionToolsEnabled: cfg.AIVisionToolsEnabled,
+
 			SystemPromptPath: cfg.SystemPromptPath,
 			SerpAPIKey:       cfg.SerpAPIKey,
 			WeatherAPIKey:    cfg.WeatherAPIKey,

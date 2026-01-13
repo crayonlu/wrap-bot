@@ -2,10 +2,10 @@ FROM node:20-alpine AS frontend-builder
 
 WORKDIR /web
 
-COPY web/package.json web/pnpm-lock.yaml ./
+COPY wrap-web/package.json wrap-web/pnpm-lock.yaml ./
 RUN npm install -g pnpm && pnpm install
 
-COPY web/ ./
+COPY wrap-web/ ./
 RUN pnpm run build
 
 FROM golang:1.23.3-alpine AS backend-builder

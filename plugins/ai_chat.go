@@ -19,15 +19,18 @@ func AIChatPlugin(cfg *config.Config) bot.HandlerFunc {
 	}
 
 	aiCfg := &aiconfig.Config{
-		APIURL:           cfg.AIURL,
-		APIKey:           cfg.AIKey,
-		TextModel:        cfg.AITextModel,
-		VisionModel:      cfg.AIVisionModel,
+		APIURL: cfg.AIURL,
+		APIKey: cfg.AIKey,
+
+		AIUnifiedModel: cfg.AIUnifiedModel,
+		AIUseUnified:   cfg.AIUseUnified,
+
+		TextModel:   cfg.AITextModel,
+		VisionModel: cfg.AIVisionModel,
+
 		Temperature:      0.7,
 		TopP:             0.9,
 		MaxTokens:        2000,
-		TextTools:        cfg.AITextTools,
-		VisionTools:      cfg.AIVisionTools,
 		MaxHistory:       20,
 		SystemPromptPath: cfg.SystemPromptPath,
 		SerpAPIKey:       cfg.SerpAPIKey,

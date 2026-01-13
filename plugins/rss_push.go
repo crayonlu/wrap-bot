@@ -26,8 +26,6 @@ func RssPushPlugin(cfg *config.Config) bot.HandlerFunc {
 			Temperature:      0.7,
 			TopP:             0.9,
 			MaxTokens:        2000,
-			TextTools:        cfg.AITextTools,
-			VisionTools:      cfg.AIVisionTools,
 			MaxHistory:       5,
 			SystemPromptPath: cfg.SystemPromptPath,
 			SerpAPIKey:       cfg.SerpAPIKey,

@@ -43,10 +43,11 @@ type LogEntry struct {
 }
 
 type AITool struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Category    string `json:"category"`
-	Enabled     bool   `json:"enabled"`
+	Name          string `json:"name"`
+	Description   string `json:"description"`
+	Category      string `json:"category"`
+	TextEnabled   bool   `json:"text_enabled"`
+	VisionEnabled bool   `json:"vision_enabled"`
 }
 
 type AIStats struct {

@@ -9,55 +9,64 @@ import (
 )
 
 type Config struct {
-	NapCatHTTPURL      string
-	NapCatWSURL        string
-	NapCatHTTPToken    string
-	NapCatWSToken      string
-	ServerPort         string
-	ServerEnabled      bool
-	Debug              bool
-	AdminIDs           []int64
-	CommandPrefix      string
-	AIEnabled          bool
-	AIURL              string
-	AIKey              string
-	AITextModel        string
-	AIVisionModel      string
-	AIImageDetail      string
-	SystemPromptPath   string
-	AnalyzerPromptPath string
-	HotApiHost         string
-	HotApiKey          string
-	TechPushGroups     []int64
-	TechPushUsers      []int64
-	RssPushGroups      []int64
-	RssPushUsers       []int64
-	AllowedUsers       []int64
-	AllowedGroups      []int64
-	RSSApiHost         string
-	AdminUsername      string
-	AdminPassword      string
-	JWTSecret          string
-	SerpAPIKey         string
-	WeatherAPIKey      string
-	AITextTools        []string
-	AIVisionTools      []string
+	NapCatHTTPURL   string
+	NapCatWSURL     string
+	NapCatHTTPToken string
+	NapCatWSToken   string
+	ServerPort      string
+	ServerEnabled   bool
+	Debug           bool
+	AdminIDs        []int64
+	CommandPrefix   string
+
+	AIEnabled bool
+	AIURL     string
+	AIKey     string
+
+	AIUnifiedModel string
+	AIUseUnified   bool
+
+	AITextModel          string
+	AIVisionModel        string
+	AIImageDetail        string
+	SystemPromptPath     string
+	AnalyzerPromptPath   string
+	HotApiHost           string
+	HotApiKey            string
+	TechPushGroups       []int64
+	TechPushUsers        []int64
+	RssPushGroups        []int64
+	RssPushUsers         []int64
+	AllowedUsers         []int64
+	AllowedGroups        []int64
+	RSSApiHost           string
+	AdminUsername        string
+	AdminPassword        string
+	JWTSecret            string
+	SerpAPIKey           string
+	WeatherAPIKey        string
+	AITextToolsEnabled   []string
+	AIVisionToolsEnabled []string
 }
 
 func Load() *Config {
 	cfg := &Config{
-		NapCatHTTPURL:      getEnv("NAPCAT_HTTP_URL", "http://localhost:3000"),
-		NapCatWSURL:        getEnv("NAPCAT_WS_URL", "ws://localhost:3001"),
-		NapCatHTTPToken:    getEnv("NAPCAT_HTTP_TOKEN", ""),
-		NapCatWSToken:      getEnv("NAPCAT_WS_TOKEN", ""),
-		ServerPort:         getEnv("SERVER_PORT", "8080"),
-		ServerEnabled:      getEnvBool("SERVER_ENABLED", true),
-		Debug:              getEnvBool("DEBUG", false),
-		AdminIDs:           getEnvInt64Slice("ADMIN_IDS", []int64{}),
-		CommandPrefix:      getEnv("COMMAND_PREFIX", "/"),
-		AIEnabled:          getEnvBool("AI_ENABLED", false),
-		AIURL:              getEnv("AI_URL", "https://api.siliconflow.cn/v1/chat/completions"),
-		AIKey:              getEnv("AI_KEY", "YOUR_API_KEY_HERE"),
+		NapCatHTTPURL:   getEnv("NAPCAT_HTTP_URL", "http://localhost:3000"),
+		NapCatWSURL:     getEnv("NAPCAT_WS_URL", "ws://localhost:3001"),
+		NapCatHTTPToken: getEnv("NAPCAT_HTTP_TOKEN", ""),
+		NapCatWSToken:   getEnv("NAPCAT_WS_TOKEN", ""),
+		ServerPort:      getEnv("SERVER_PORT", "8080"),
+		ServerEnabled:   getEnvBool("SERVER_ENABLED", true),
+		Debug:           getEnvBool("DEBUG", false),
+		AdminIDs:        getEnvInt64Slice("ADMIN_IDS", []int64{}),
+		CommandPrefix:   getEnv("COMMAND_PREFIX", "/"),
+		AIEnabled:       getEnvBool("AI_ENABLED", false),
+		AIURL:           getEnv("AI_URL", "https://api.siliconflow.cn/v1/chat/completions"),
+		AIKey:           getEnv("AI_KEY", "YOUR_API_KEY_HERE"),
+
+		AIUnifiedModel: getEnv("AI_UNIFIED_MODEL", ""),
+		AIUseUnified:   getEnvBool("AI_USE_UNIFIED", false),
+
 		AITextModel:        getEnv("AI_TEXT_MODEL", "deepseek/deepseek-r1-turbo"),
 		AIVisionModel:      getEnv("AI_VISION_MODEL", "qwen/qwen3-vl-235b-a22b-thinking"),
 		AIImageDetail:      getEnv("AI_IMAGE_DETAIL", "auto"),
@@ -77,8 +86,6 @@ func Load() *Config {
 		JWTSecret:          getEnv("JWT_SECRET", ""),
 		SerpAPIKey:         getEnv("SERP_API_KEY", ""),
 		WeatherAPIKey:      getEnv("WEATHER_API_KEY", ""),
-		AITextTools:        getEnvStringSlice("AI_TEXT_MODEL_TOOLS", []string{}),
-		AIVisionTools:      getEnvStringSlice("AI_VISION_MODEL_TOOLS", []string{}),
 	}
 
 	logger.Info("================================================")
@@ -93,6 +100,8 @@ func Load() *Config {
 	logger.Info("  CommandPrefix: " + cfg.CommandPrefix)
 	logger.Info("  AIEnabled: " + strconv.FormatBool(cfg.AIEnabled))
 	logger.Info("  AIURL: " + cfg.AIURL)
+	logger.Info("  AIUnifiedModel: " + cfg.AIUnifiedModel)
+	logger.Info("  AIUseUnified: " + strconv.FormatBool(cfg.AIUseUnified))
 	logger.Info("  AITextModel: " + cfg.AITextModel)
 	logger.Info("  AIVisionModel: " + cfg.AIVisionModel)
 	logger.Info("  AIImageDetail: " + cfg.AIImageDetail)
@@ -107,12 +116,35 @@ func Load() *Config {
 	logger.Info("  AllowedGroups: " + strings.Join(int64SliceToString(cfg.AllowedGroups), ","))
 	logger.Info("  RSSApiHost: " + cfg.RSSApiHost)
 	logger.Info("  AdminUsername: " + cfg.AdminUsername)
+	logger.Info("  AITextToolsEnabled: " + strings.Join(cfg.AITextToolsEnabled, ","))
+	logger.Info("  AIVisionToolsEnabled: " + strings.Join(cfg.AIVisionToolsEnabled, ","))
 	logger.Info("  SerpAPIKey: " + maskKey(cfg.SerpAPIKey))
 	logger.Info("  WeatherAPIKey: " + maskKey(cfg.WeatherAPIKey))
-	logger.Info("  AITextTools: " + strings.Join(cfg.AITextTools, ","))
-	logger.Info("  AIVisionTools: " + strings.Join(cfg.AIVisionTools, ","))
 	logger.Info("================================================")
 	return cfg
+}
+
+func getEnvStringSlice(key string, defaultValue []string) []string {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
+	}
+
+	parts := strings.Split(value, ",")
+	result := make([]string, 0, len(parts))
+
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if part != "" {
+			result = append(result, part)
+		}
+	}
+
+	if len(result) == 0 {
+		return defaultValue
+	}
+
+	return result
 }
 
 func getEnv(key, defaultValue string) string {
@@ -156,29 +188,6 @@ func getEnvInt64Slice(key string, defaultValue []int64) []int64 {
 		}
 
 		result = append(result, num)
-	}
-
-	if len(result) == 0 {
-		return defaultValue
-	}
-
-	return result
-}
-
-func getEnvStringSlice(key string, defaultValue []string) []string {
-	value := os.Getenv(key)
-	if value == "" {
-		return defaultValue
-	}
-
-	parts := strings.Split(value, ",")
-	result := make([]string, 0, len(parts))
-
-	for _, part := range parts {
-		part = strings.TrimSpace(part)
-		if part != "" {
-			result = append(result, part)
-		}
 	}
 
 	if len(result) == 0 {

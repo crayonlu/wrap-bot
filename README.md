@@ -18,7 +18,7 @@ bot/
 ├── cmd/bot/                  # Main application entry point
 ├── internal/
 │   ├── config/               # Configuration management
-│   └── server/               # HTTP server (optional)
+│   └── admin/               # Admin API and WebSocket
 ├── pkgs/
 │   ├── bot/                  # Core bot engine
 │   │   ├── engine.go         # Bot engine with middleware support
@@ -42,6 +42,14 @@ bot/
 │       ├── tech_push.go
 │       └── handlers/         # Data source handlers
 ├── configs/                  # Configuration files
+├── wrap-web/                # Admin web panel (React + shadcn/ui)
+│   ├── src/
+│   │   ├── components/       # React components
+│   │   ├── pages/           # Page components
+│   │   ├── lib/             # Utilities (API, WebSocket)
+│   │   ├── stores/          # Zustand state management
+│   │   └── hooks/           # Custom React hooks
+│   └── package.json
 └── .github/workflows/        # CI/CD workflows
 ```
 

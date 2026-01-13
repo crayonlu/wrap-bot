@@ -18,13 +18,19 @@ type AgentConfig struct {
 	History      *memory.HistoryManager
 	ToolRegistry tool.ToolRegistry
 	SystemPrompt string
+
+	UnifiedModel string
 	TextModel    string
 	VisionModel  string
-	Temperature  float64
-	TopP         float64
-	MaxTokens    int
-	TextTools    []string
-	VisionTools  []string
+	UseUnified   bool
+
+	Temperature float64
+	TopP        float64
+	MaxTokens   int
+
+	// 工具列表配置
+	TextToolsEnabled    []string
+	VisionToolsEnabled  []string
 }
 
 type ChatAgent struct {
@@ -56,8 +62,13 @@ func (a *ChatAgent) Chat(ctx context.Context, conversationID, message string) (*
 
 	logger.Info(fmt.Sprintf("[Chat] History size: %d messages", len(history)))
 
+	model := a.config.TextModel
+	if a.config.UseUnified {
+		model = a.config.UnifiedModel
+	}
+
 	req := ai.ChatRequest{
-		Model:       a.config.TextModel,
+		Model:       model,
 		Messages:    convertMessagesToChatRequest(messages),
 		Stream:      false,
 		Temperature: a.config.Temperature,
@@ -150,8 +161,13 @@ func (a *ChatAgent) ChatWithImages(ctx context.Context, conversationID, message 
 	logger.Info(fmt.Sprintf("[ChatWithImages] History size: %d -> %d (after filtering tool calls)", len(history), len(filteredHistory)))
 	messages = append(messages, filteredHistory...)
 
+	model := a.config.VisionModel
+	if a.config.UseUnified {
+		model = a.config.UnifiedModel
+	}
+
 	req := ai.ChatRequest{
-		Model:       a.config.VisionModel,
+		Model:       model,
 		Messages:    convertMessagesToChatRequest(messages),
 		Stream:      false,
 		Temperature: a.config.Temperature,
@@ -213,26 +229,51 @@ func (a *ChatAgent) ClearHistory(conversationID string) error {
 }
 
 func (a *ChatAgent) getToolsForModel(modelType string) []tool.Tool {
-	var enabledToolNames []string
+	allTools := a.config.ToolRegistry.GetAll()
 
-	switch modelType {
-	case "text":
-		enabledToolNames = a.config.TextTools
-	case "vision":
-		enabledToolNames = a.config.VisionTools
-	default:
-		return []tool.Tool{}
-	}
-
-	tools := a.config.ToolRegistry.GetAll()
 	var result []tool.Tool
-	for _, t := range tools {
-		if t.Enabled && contains(enabledToolNames, t.Name) {
+	for _, t := range allTools {
+		if !t.Enabled {
+			continue
+		}
+
+		compatible := false
+		switch t.Category {
+		case tool.CategoryText:
+			compatible = (modelType == "text")
+		case tool.CategoryVision:
+			compatible = (modelType == "vision")
+		case tool.CategoryBoth:
+			compatible = true
+		}
+
+		if !compatible {
+			continue
+		}
+
+		enabled := false
+		switch modelType {
+		case "text":
+			enabled = contains(a.config.TextToolsEnabled, t.Name)
+		case "vision":
+			enabled = contains(a.config.VisionToolsEnabled, t.Name)
+		}
+
+		if enabled {
 			result = append(result, t)
 		}
 	}
 
 	return result
+}
+
+func contains(slice []string, item string) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
+	}
+	return false
 }
 
 func (a *ChatAgent) handleToolCalls(ctx context.Context, conversationID string, assistantMsg ai.Message) (*ChatResult, error) {
@@ -270,8 +311,13 @@ func (a *ChatAgent) handleToolCalls(ctx context.Context, conversationID string, 
 	history, _ := a.config.History.GetHistory(conversationID)
 	messages = append(messages, convertMessagesToChatRequest(history)...)
 
+	model := a.config.TextModel
+	if a.config.UseUnified {
+		model = a.config.UnifiedModel
+	}
+
 	req := ai.ChatRequest{
-		Model:       a.config.TextModel,
+		Model:       model,
 		Messages:    messages,
 		Stream:      false,
 		Temperature: a.config.Temperature,
@@ -314,15 +360,6 @@ func (a *ChatAgent) handleToolCalls(ctx context.Context, conversationID string, 
 	}
 
 	return nil, fmt.Errorf("no response after tool call")
-}
-
-func contains(slice []string, item string) bool {
-	for _, s := range slice {
-		if s == item {
-			return true
-		}
-	}
-	return false
 }
 
 func filterToolCallMessages(messages []memory.Message) []memory.Message {

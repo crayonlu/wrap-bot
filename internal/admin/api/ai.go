@@ -2,8 +2,6 @@ package api
 
 import (
 	"net/http"
-	"os"
-	"strings"
 	"time"
 
 	"github.com/crayon/wrap-bot/internal/admin/types"
@@ -27,47 +25,58 @@ func initAI() {
 func GetAITools(c echo.Context) error {
 	initAI()
 
+	cfg := config.Load()
+	textTools := cfg.TextToolsEnabled
+	visionTools := cfg.VisionToolsEnabled
+
 	tools := []types.AITool{
 		{
 			Name:        "get_current_time",
 			Description: "获取当前时间",
 			Category:    "both",
+			TextEnabled:  contains(textTools, "get_current_time"),
+			VisionEnabled: contains(visionTools, "get_current_time"),
 		},
 		{
 			Name:        "parse_relative_time",
 			Description: "解析相对时间表达式（如'3天后'）",
 			Category:    "both",
+			TextEnabled:  contains(textTools, "parse_relative_time"),
+			VisionEnabled: contains(visionTools, "parse_relative_time"),
 		},
 		{
 			Name:        "web_search",
 			Description: "网络搜索",
 			Category:    "both",
+			TextEnabled:  contains(textTools, "web_search"),
+			VisionEnabled: contains(visionTools, "web_search"),
 		},
 		{
 			Name:        "get_weather",
 			Description: "获取当前天气",
 			Category:    "both",
+			TextEnabled:  contains(textTools, "get_weather"),
+			VisionEnabled: contains(visionTools, "get_weather"),
 		},
 		{
 			Name:        "get_weather_forecast",
 			Description: "获取天气预报",
 			Category:    "both",
+			TextEnabled:  contains(textTools, "get_weather_forecast"),
+			VisionEnabled: contains(visionTools, "get_weather_forecast"),
 		},
 	}
 
-	textTools := strings.Split(os.Getenv("AI_TEXT_MODEL_TOOLS"), ",")
+	return c.JSON(http.StatusOK, tools)
+}
 
-	for i := range tools {
-		tools[i].Enabled = false
-		for _, t := range textTools {
-			if strings.TrimSpace(t) == tools[i].Name {
-				tools[i].Enabled = true
-				break
-			}
+func contains(slice []string, item string) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
 		}
 	}
-
-	return c.JSON(http.StatusOK, tools)
+	return false
 }
 
 func GetAIStats(c echo.Context) error {

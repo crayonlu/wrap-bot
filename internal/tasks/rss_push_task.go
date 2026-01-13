@@ -23,14 +23,21 @@ func NewRssPushTask(cfg *config.Config) *RssPushTask {
 		aiCfg := &aiconfig.Config{
 			APIURL:           cfg.AIURL,
 			APIKey:           cfg.AIKey,
+
+			AIUnifiedModel: cfg.AIUnifiedModel,
+			AIUseUnified:   cfg.AIUseUnified,
+
 			TextModel:        cfg.AITextModel,
 			VisionModel:      cfg.AIVisionModel,
+
 			Temperature:      0.7,
 			TopP:             0.9,
 			MaxTokens:        2000,
-			TextTools:        cfg.AITextTools,
-			VisionTools:      cfg.AIVisionTools,
 			MaxHistory:       5,
+
+			TextToolsEnabled:    cfg.AITextToolsEnabled,
+			VisionToolsEnabled:  cfg.AIVisionToolsEnabled,
+
 			SystemPromptPath: cfg.SystemPromptPath,
 			SerpAPIKey:       cfg.SerpAPIKey,
 			WeatherAPIKey:    cfg.WeatherAPIKey,
@@ -68,13 +75,11 @@ func (t *RssPushTask) Schedule(sched *scheduler.Scheduler, cfg *config.Config) e
 	entryID, err := sched.At(13, 0, 0).WithID(t.Name()).Do(func() {
 		if err := t.service.SendRssPush(); err != nil {
 			logger.Error(fmt.Sprintf("[Rss Push]RssPushTask execution failed: %v", err))
-		} else {
-			logger.Info("[Rss Push]RssPushTask executed successfully")
 		}
 	})
 
 	if err == nil {
-		sched.RegisterTask(t.Name(), "RSS Daily Push", "每日推送 RSS 订阅内容", "0 0 13 * * *", entryID)
+		sched.RegisterTask(t.Name(), "RSS Daily Push", "每日推送 RSS 订阅内容", "0 0 13 *", entryID)
 	}
 
 	return err
