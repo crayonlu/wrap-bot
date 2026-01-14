@@ -1,12 +1,16 @@
 package memory
 
-import "sync"
+import (
+	"sync"
+	"time"
+)
 
 type Message struct {
 	Role       string
 	Content    interface{}
 	ToolCalls  []ToolCall `json:"tool_calls,omitempty"`
 	ToolCallID string     `json:"tool_call_id,omitempty"`
+	Timestamp  time.Time  `json:"timestamp,omitempty"`
 }
 
 type ToolCall struct {

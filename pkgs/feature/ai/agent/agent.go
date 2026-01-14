@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/crayon/wrap-bot/pkgs/feature/ai"
 	"github.com/crayon/wrap-bot/pkgs/feature/ai/memory"
@@ -28,9 +29,8 @@ type AgentConfig struct {
 	TopP        float64
 	MaxTokens   int
 
-	// 工具列表配置
-	TextToolsEnabled    []string
-	VisionToolsEnabled  []string
+	TextToolsEnabled   []string
+	VisionToolsEnabled []string
 }
 
 type ChatAgent struct {
@@ -51,7 +51,11 @@ func NewChatAgent(cfg AgentConfig) *ChatAgent {
 func (a *ChatAgent) Chat(ctx context.Context, conversationID, message string) (*ChatResult, error) {
 	logger.Info(fmt.Sprintf("[Chat] ConversationID: %s, Message: %s", conversationID, message))
 
-	userMsg := memory.Message{Role: "user", Content: message}
+	userMsg := memory.Message{
+		Role:      "user",
+		Content:   message,
+		Timestamp: time.Now(),
+	}
 	a.config.History.AddMessage(conversationID, userMsg)
 
 	messages := []memory.Message{{Role: "system", Content: a.config.SystemPrompt}}
@@ -77,9 +81,12 @@ func (a *ChatAgent) Chat(ctx context.Context, conversationID, message string) (*
 	}
 
 	tools := a.getToolsForModel("text")
+	logger.Info(fmt.Sprintf("[Chat] Filtered %d tool(s) for text model", len(tools)))
 	if len(tools) > 0 {
 		req.Tools = convertToolsToChatRequest(tools)
 		logger.Info(fmt.Sprintf("[Chat] Added %d tool(s) to request", len(tools)))
+	} else {
+		logger.Warn("[Chat] No tools available - check AI_TEXT_MODEL_TOOLS configuration")
 	}
 
 	resp, err := a.config.Provider.Complete(ctx, req)
@@ -102,7 +109,11 @@ func (a *ChatAgent) Chat(ctx context.Context, conversationID, message string) (*
 		return a.handleToolCalls(ctx, conversationID, choice.Message)
 	}
 
-	assistantMsg := memory.Message{Role: "assistant", Content: choice.Message.Content}
+	assistantMsg := memory.Message{
+		Role:      "assistant",
+		Content:   choice.Message.Content,
+		Timestamp: time.Now(),
+	}
 	a.config.History.AddMessage(conversationID, assistantMsg)
 
 	if contentStr, ok := choice.Message.Content.(string); ok {
@@ -152,7 +163,11 @@ func (a *ChatAgent) ChatWithImages(ctx context.Context, conversationID, message 
 		content = message
 	}
 
-	userMsg := memory.Message{Role: "user", Content: content}
+	userMsg := memory.Message{
+		Role:      "user",
+		Content:   content,
+		Timestamp: time.Now(),
+	}
 	a.config.History.AddMessage(conversationID, userMsg)
 
 	messages := []memory.Message{{Role: "system", Content: a.config.SystemPrompt}}
@@ -176,9 +191,12 @@ func (a *ChatAgent) ChatWithImages(ctx context.Context, conversationID, message 
 	}
 
 	tools := a.getToolsForModel("vision")
+	logger.Info(fmt.Sprintf("[ChatWithImages] Filtered %d tool(s) for vision model", len(tools)))
 	if len(tools) > 0 {
 		req.Tools = convertToolsToChatRequest(tools)
 		logger.Info(fmt.Sprintf("[ChatWithImages] Added %d tool(s) to request", len(tools)))
+	} else {
+		logger.Warn("[ChatWithImages] No tools available - check AI_VISION_MODEL_TOOLS configuration")
 	}
 
 	resp, err := a.config.Provider.Complete(ctx, req)
@@ -200,7 +218,11 @@ func (a *ChatAgent) ChatWithImages(ctx context.Context, conversationID, message 
 		return a.handleToolCalls(ctx, conversationID, choice.Message)
 	}
 
-	assistantMsg := memory.Message{Role: "assistant", Content: choice.Message.Content}
+	assistantMsg := memory.Message{
+		Role:      "assistant",
+		Content:   choice.Message.Content,
+		Timestamp: time.Now(),
+	}
 	a.config.History.AddMessage(conversationID, assistantMsg)
 
 	if contentStr, ok := choice.Message.Content.(string); ok {
@@ -283,6 +305,7 @@ func (a *ChatAgent) handleToolCalls(ctx context.Context, conversationID string, 
 		Role:      "assistant",
 		Content:   assistantMsg.Content,
 		ToolCalls: convertToolCallsToMemory(assistantMsg.ToolCalls),
+		Timestamp: time.Now(),
 	}
 	a.config.History.AddMessage(conversationID, assistantMemoryMsg)
 
@@ -301,6 +324,7 @@ func (a *ChatAgent) handleToolCalls(ctx context.Context, conversationID string, 
 			Role:       "tool",
 			Content:    result,
 			ToolCallID: toolCall.ID,
+			Timestamp:  time.Now(),
 		}
 		a.config.History.AddMessage(conversationID, toolMsg)
 	}
@@ -336,7 +360,11 @@ func (a *ChatAgent) handleToolCalls(ctx context.Context, conversationID string, 
 	if len(resp.Choices) > 0 {
 		content := resp.Choices[0].Message.Content
 		if contentStr, ok := content.(string); ok {
-			assistantMsg := memory.Message{Role: "assistant", Content: contentStr}
+			assistantMsg := memory.Message{
+				Role:      "assistant",
+				Content:   contentStr,
+				Timestamp: time.Now(),
+			}
 			a.config.History.AddMessage(conversationID, assistantMsg)
 
 			thinking := resp.Choices[0].Message.ReasoningContent
@@ -408,9 +436,38 @@ func filterImageMessages(messages []memory.Message) []memory.Message {
 func convertMessagesToChatRequest(messages []memory.Message) []ai.Message {
 	result := make([]ai.Message, 0, len(messages))
 	for _, msg := range messages {
+		content := msg.Content
+		if msg.Role != "system" && !msg.Timestamp.IsZero() {
+			timeStr := msg.Timestamp.Format("2006-01-02 15:04:05")
+			if contentStr, ok := content.(string); ok {
+				content = fmt.Sprintf("[%s] %s", timeStr, contentStr)
+			} else if contentItems, ok := content.([]ai.ContentItem); ok {
+				newItems := make([]ai.ContentItem, 0, len(contentItems))
+				timeAdded := false
+				for _, item := range contentItems {
+					if item.Type == "text" && !timeAdded {
+						newItems = append(newItems, ai.ContentItem{
+							Type: "text",
+							Text: fmt.Sprintf("[%s] %s", timeStr, item.Text),
+						})
+						timeAdded = true
+					} else {
+						newItems = append(newItems, item)
+					}
+				}
+				if !timeAdded {
+					newItems = append([]ai.ContentItem{{
+						Type: "text",
+						Text: fmt.Sprintf("[%s]", timeStr),
+					}}, newItems...)
+				}
+				content = newItems
+			}
+		}
+
 		aiMsg := ai.Message{
 			Role:       msg.Role,
-			Content:    msg.Content,
+			Content:    content,
 			ToolCalls:  convertToolCallsToAI(msg.ToolCalls),
 			ToolCallID: msg.ToolCallID,
 		}
