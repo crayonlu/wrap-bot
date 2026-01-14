@@ -50,21 +50,6 @@ type AITool struct {
 	VisionEnabled bool   `json:"vision_enabled"`
 }
 
-type AIStats struct {
-	TotalCalls  int64          `json:"total_calls"`
-	ToolUsage   map[string]int `json:"tool_usage"`
-	SuccessRate float64        `json:"success_rate"`
-	RecentCalls []AICallRecord `json:"recent_calls"`
-}
-
-type AICallRecord struct {
-	Timestamp  string   `json:"timestamp"`
-	Model      string   `json:"model"`
-	ToolsUsed  []string `json:"tools_used"`
-	Success    bool     `json:"success"`
-	DurationMs int64    `json:"duration_ms"`
-}
-
 type AIChatRequest struct {
 	Message        string   `json:"message"`
 	Images         []string `json:"images,omitempty"`

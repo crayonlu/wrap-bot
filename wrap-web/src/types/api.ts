@@ -60,21 +60,6 @@ export interface AITool {
   vision_enabled: boolean;
 }
 
-export interface AIStats {
-  total_calls: number;
-  tool_usage: Record<string, number>;
-  success_rate: number;
-  recent_calls: AICall[];
-}
-
-export interface AICall {
-  timestamp: string;
-  model: string;
-  tools_used: string[];
-  success: boolean;
-  duration_ms: number;
-}
-
 export interface ChatRequest {
   message: string;
   conversation_id?: string;

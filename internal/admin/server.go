@@ -35,7 +35,6 @@ func StartServer(port string) *echo.Echo {
 	admin.GET("/presets/:filename", api.GetPreset)
 	admin.PUT("/presets/:filename", api.UpdatePreset)
 	admin.GET("/ai/tools", api.GetAITools)
-	admin.GET("/ai/stats", api.GetAIStats)
 	admin.POST("/ai/chat", api.TestAIChat)
 	admin.POST("/ai/chat/image", api.TestAIImageChat)
 

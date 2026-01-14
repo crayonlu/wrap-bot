@@ -9,7 +9,6 @@ import type {
   LogEntry,
   Preset,
   AITool,
-  AIStats,
   ChatRequest,
   ChatResponse,
   ImageChatRequest,
@@ -121,11 +120,6 @@ class ApiClient {
 
   async getAITools(): Promise<AITool[]> {
     const response = await this.client.get<AITool[]>('/api/ai/tools');
-    return response.data;
-  }
-
-  async getAIStats(): Promise<AIStats> {
-    const response = await this.client.get<AIStats>('/api/ai/stats');
     return response.data;
   }
 

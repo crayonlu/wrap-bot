@@ -106,14 +106,14 @@ export function Logs() {
                 <Filter className="h-4 w-4 text-muted-foreground" />
                 <Select value={levelFilter} onValueChange={setLevelFilter}>
                   <SelectTrigger className="w-[120px] min-h-[44px]">
-                    <SelectValue />
+                    <SelectValue placeholder="全部" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">全部</SelectItem>
-                    <SelectItem value="DEBUG">DEBUG</SelectItem>
-                    <SelectItem value="INFO">INFO</SelectItem>
-                    <SelectItem value="WARN">WARN</SelectItem>
-                    <SelectItem value="ERROR">ERROR</SelectItem>
+                    <SelectItem value="debug">DEBUG</SelectItem>
+                    <SelectItem value="info">INFO</SelectItem>
+                    <SelectItem value="warn">WARN</SelectItem>
+                    <SelectItem value="error">ERROR</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

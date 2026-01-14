@@ -79,17 +79,6 @@ func contains(slice []string, item string) bool {
 	return false
 }
 
-func GetAIStats(c echo.Context) error {
-	stats := types.AIStats{
-		TotalCalls:  0,
-		ToolUsage:   make(map[string]int),
-		SuccessRate: 100.0,
-		RecentCalls: []types.AICallRecord{},
-	}
-
-	return c.JSON(http.StatusOK, stats)
-}
-
 func TestAIChat(c echo.Context) error {
 	initAI()
 

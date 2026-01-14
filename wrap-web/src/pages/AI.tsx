@@ -1,19 +1,17 @@
 import { useState, useEffect } from 'react';
-import { Brain, MessageSquare, Image as ImageIcon, BarChart3 } from 'lucide-react';
+import { Image as ImageIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { apiClient } from '@/lib/api';
 import { toast } from 'sonner';
-import type { AITool, AIStats } from '@/types/api';
+import type { AITool } from '@/types/api';
 
 export function AI() {
   const [tools, setTools] = useState<AITool[]>([]);
-  const [stats, setStats] = useState<AIStats | null>(null);
   const [textMessage, setTextMessage] = useState('');
   const [imageMessage, setImageMessage] = useState('');
   const [imageUrls, setImageUrls] = useState('');
@@ -22,19 +20,15 @@ export function AI() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetchData();
+    fetchTools();
   }, []);
 
-  const fetchData = async () => {
+  const fetchTools = async () => {
     try {
-      const [toolsData, statsData] = await Promise.all([
-        apiClient.getAITools(),
-        apiClient.getAIStats(),
-      ]);
+      const toolsData = await apiClient.getAITools();
       setTools(toolsData);
-      setStats(statsData);
     } catch (error: any) {
-      toast.error(error.response?.data?.error || '获取AI数据失败');
+      toast.error(error.response?.data?.error || '获取AI工具失败');
     }
   };
 
@@ -98,45 +92,6 @@ export function AI() {
         <h1 className="text-2xl lg:text-3xl font-bold">AI功能</h1>
         <p className="text-muted-foreground">AI工具和对话测试</p>
       </div>
-
-      {stats && (
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">总调用次数</CardTitle>
-              <MessageSquare className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.total_calls}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">成功率</CardTitle>
-              <BarChart3 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {stats.success_rate.toFixed(1)}%
-              </div>
-              <Progress value={stats.success_rate} className="mt-2" />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">活跃工具</CardTitle>
-              <Brain className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {Object.keys(stats.tool_usage).length}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
 
       <Tabs defaultValue="tools" className="space-y-4">
         <TabsList className="grid w-full grid-cols-3">

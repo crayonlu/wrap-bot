@@ -12,14 +12,19 @@ import (
 )
 
 var jwtSecret []byte
+var jwtSecretInitialized bool
 
-func init() {
-	secret := os.Getenv("JWT_SECRET")
-	if secret == "" {
-		logger.Error("JWT_SECRET environment variable is required")
-		os.Exit(1)
+func getJWTSecret() []byte {
+	if !jwtSecretInitialized {
+		secret := os.Getenv("JWT_SECRET")
+		if secret == "" {
+			logger.Error("JWT_SECRET environment variable is required")
+			os.Exit(1)
+		}
+		jwtSecret = []byte(secret)
+		jwtSecretInitialized = true
 	}
-	jwtSecret = []byte(secret)
+	return jwtSecret
 }
 
 type Claims struct {
@@ -36,7 +41,7 @@ func GenerateToken(username string) (string, error) {
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(jwtSecret)
+	return token.SignedString(getJWTSecret())
 }
 
 func JWTAuth() echo.MiddlewareFunc {
@@ -51,7 +56,7 @@ func JWTAuth() echo.MiddlewareFunc {
 			claims := &Claims{}
 
 			token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
-				return jwtSecret, nil
+				return getJWTSecret(), nil
 			})
 
 			if err != nil || !token.Valid {
