@@ -55,9 +55,7 @@ export interface Preset {
 export interface AITool {
   name: string;
   description: string;
-  category: string;
-  text_enabled: boolean;
-  vision_enabled: boolean;
+  enabled: boolean;
 }
 
 export interface ChatRequest {

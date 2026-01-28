@@ -13,18 +13,13 @@ type Config struct {
 	APIURL string
 	APIKey string
 
-	AIUnifiedModel string
-	AIUseUnified   bool
-
-	TextModel   string
-	VisionModel string
+	Model string
 
 	Temperature float64
 	TopP        float64
 	MaxTokens   int
 
-	TextToolsEnabled    []string
-	VisionToolsEnabled  []string
+	ToolsEnabled []string
 
 	MaxHistory       int
 	SystemPromptPath string
@@ -37,17 +32,12 @@ func Load() *Config {
 		APIURL: getEnv("AI_URL", "https://api.siliconflow.cn/v1/chat/completions"),
 		APIKey: getEnv("AI_KEY", "YOUR_API_KEY_HERE"),
 
-		AIUnifiedModel: getEnv("AI_UNIFIED_MODEL", ""),
-		AIUseUnified:   getEnvBool("AI_USE_UNIFIED", false),
-
-		TextModel:   getEnv("AI_TEXT_MODEL", "deepseek/deepseek-r1-turbo"),
-		VisionModel: getEnv("AI_VISION_MODEL", "qwen/qwen3-vl-235b-a22b-thinking"),
+		Model: getEnv("AI_MODEL", "moonshotai/kimi-k2.5"),
 
 		Temperature:      getEnvFloat64("AI_TEMPERATURE", 0.7),
 		TopP:             getEnvFloat64("AI_TOP_P", 0.9),
 		MaxTokens:        getEnvInt("AI_MAX_TOKENS", 2000),
-		TextToolsEnabled:    getEnvStringSlice("AI_TEXT_MODEL_TOOLS", []string{}),
-		VisionToolsEnabled:  getEnvStringSlice("AI_VISION_MODEL_TOOLS", []string{}),
+		ToolsEnabled:     getEnvStringSlice("AI_TOOLS", []string{}),
 		MaxHistory:       getEnvInt("AI_MAX_HISTORY", 20),
 		SystemPromptPath: getEnv("SYSTEM_PROMPT_PATH", "configs/system_prompt.md"),
 		SerpAPIKey:       getEnv("SERP_API_KEY", ""),

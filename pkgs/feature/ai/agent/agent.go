@@ -20,17 +20,17 @@ type AgentConfig struct {
 	ToolRegistry tool.ToolRegistry
 	SystemPrompt string
 
-	UnifiedModel string
-	TextModel    string
-	VisionModel  string
-	UseUnified   bool
+	Model string
 
 	Temperature float64
 	TopP        float64
 	MaxTokens   int
 
-	TextToolsEnabled   []string
-	VisionToolsEnabled []string
+	ToolsEnabled []string
+}
+
+type ChatOptions struct {
+	NoHistory bool
 }
 
 type ChatAgent struct {
@@ -49,30 +49,32 @@ func NewChatAgent(cfg AgentConfig) *ChatAgent {
 }
 
 func (a *ChatAgent) Chat(ctx context.Context, conversationID, message string) (*ChatResult, error) {
-	logger.Info(fmt.Sprintf("[Chat] ConversationID: %s, Message: %s", conversationID, message))
+	return a.ChatWithOptions(ctx, conversationID, message, ChatOptions{})
+}
 
-	userMsg := memory.Message{
-		Role:      "user",
-		Content:   message,
-		Timestamp: time.Now(),
+func (a *ChatAgent) ChatWithOptions(ctx context.Context, conversationID, message string, opts ChatOptions) (*ChatResult, error) {
+	logger.Info(fmt.Sprintf("[Chat] ConversationID: %s, Message: %s, NoHistory: %v", conversationID, message, opts.NoHistory))
+
+	if !opts.NoHistory {
+		userMsg := memory.Message{
+			Role:      "user",
+			Content:   message,
+			Timestamp: time.Now(),
+		}
+		a.config.History.AddMessage(conversationID, userMsg)
 	}
-	a.config.History.AddMessage(conversationID, userMsg)
 
 	messages := []memory.Message{{Role: "system", Content: a.config.SystemPrompt}}
-	history, _ := a.config.History.GetHistory(conversationID)
-	filteredHistory := filterImageMessages(history)
-	logger.Info(fmt.Sprintf("[Chat] History size: %d -> %d (after filtering images)", len(history), len(filteredHistory)))
-	messages = append(messages, filteredHistory...)
 
-	logger.Info(fmt.Sprintf("[Chat] History size: %d messages", len(history)))
-
-	model := a.config.TextModel
-	if a.config.UseUnified {
-		model = a.config.UnifiedModel
+	if !opts.NoHistory {
+		history, _ := a.config.History.GetHistory(conversationID)
+		filteredHistory := filterImageMessages(history)
+		logger.Info(fmt.Sprintf("[Chat] History size: %d -> %d (after filtering images)", len(history), len(filteredHistory)))
+		messages = append(messages, filteredHistory...)
 	}
 
 	req := ai.ChatRequest{
-		Model:       model,
+		Model:       a.config.Model,
 		Messages:    convertMessagesToChatRequest(messages),
 		Stream:      false,
 		Temperature: a.config.Temperature,
@@ -80,13 +82,13 @@ func (a *ChatAgent) Chat(ctx context.Context, conversationID, message string) (*
 		MaxTokens:   a.config.MaxTokens,
 	}
 
-	tools := a.getToolsForModel("text")
-	logger.Info(fmt.Sprintf("[Chat] Filtered %d tool(s) for text model", len(tools)))
+	tools := a.getTools()
+	logger.Info(fmt.Sprintf("[Chat] Filtered %d tool(s)", len(tools)))
 	if len(tools) > 0 {
 		req.Tools = convertToolsToChatRequest(tools)
 		logger.Info(fmt.Sprintf("[Chat] Added %d tool(s) to request", len(tools)))
 	} else {
-		logger.Warn("[Chat] No tools available - check AI_TEXT_MODEL_TOOLS configuration")
+		logger.Warn("[Chat] No tools available - check AI_TOOLS configuration")
 	}
 
 	resp, err := a.config.Provider.Complete(ctx, req)
@@ -106,15 +108,17 @@ func (a *ChatAgent) Chat(ctx context.Context, conversationID, message string) (*
 
 	if len(choice.Message.ToolCalls) > 0 {
 		logger.Info(fmt.Sprintf("[Chat] Model requested %d tool call(s)", len(choice.Message.ToolCalls)))
-		return a.handleToolCalls(ctx, conversationID, choice.Message)
+		return a.handleToolCalls(ctx, conversationID, choice.Message, opts)
 	}
 
-	assistantMsg := memory.Message{
-		Role:      "assistant",
-		Content:   choice.Message.Content,
-		Timestamp: time.Now(),
+	if !opts.NoHistory {
+		assistantMsg := memory.Message{
+			Role:      "assistant",
+			Content:   choice.Message.Content,
+			Timestamp: time.Now(),
+		}
+		a.config.History.AddMessage(conversationID, assistantMsg)
 	}
-	a.config.History.AddMessage(conversationID, assistantMsg)
 
 	if contentStr, ok := choice.Message.Content.(string); ok {
 		thinking := choice.Message.ReasoningContent
@@ -138,7 +142,11 @@ func (a *ChatAgent) Chat(ctx context.Context, conversationID, message string) (*
 }
 
 func (a *ChatAgent) ChatWithImages(ctx context.Context, conversationID, message string, imageURLs []string) (*ChatResult, error) {
-	logger.Info(fmt.Sprintf("[ChatWithImages] ConversationID: %s, Message: %s, Images: %d", conversationID, message, len(imageURLs)))
+	return a.ChatWithImagesAndOptions(ctx, conversationID, message, imageURLs, ChatOptions{})
+}
+
+func (a *ChatAgent) ChatWithImagesAndOptions(ctx context.Context, conversationID, message string, imageURLs []string, opts ChatOptions) (*ChatResult, error) {
+	logger.Info(fmt.Sprintf("[ChatWithImages] ConversationID: %s, Message: %s, Images: %d, NoHistory: %v", conversationID, message, len(imageURLs), opts.NoHistory))
 
 	var content interface{}
 	if len(imageURLs) > 0 {
@@ -163,26 +171,26 @@ func (a *ChatAgent) ChatWithImages(ctx context.Context, conversationID, message 
 		content = message
 	}
 
-	userMsg := memory.Message{
-		Role:      "user",
-		Content:   content,
-		Timestamp: time.Now(),
+	if !opts.NoHistory {
+		userMsg := memory.Message{
+			Role:      "user",
+			Content:   content,
+			Timestamp: time.Now(),
+		}
+		a.config.History.AddMessage(conversationID, userMsg)
 	}
-	a.config.History.AddMessage(conversationID, userMsg)
 
 	messages := []memory.Message{{Role: "system", Content: a.config.SystemPrompt}}
-	history, _ := a.config.History.GetHistory(conversationID)
-	filteredHistory := filterToolCallMessages(history)
-	logger.Info(fmt.Sprintf("[ChatWithImages] History size: %d -> %d (after filtering tool calls)", len(history), len(filteredHistory)))
-	messages = append(messages, filteredHistory...)
 
-	model := a.config.VisionModel
-	if a.config.UseUnified {
-		model = a.config.UnifiedModel
+	if !opts.NoHistory {
+		history, _ := a.config.History.GetHistory(conversationID)
+		filteredHistory := filterToolCallMessages(history)
+		logger.Info(fmt.Sprintf("[ChatWithImages] History size: %d -> %d (after filtering tool calls)", len(history), len(filteredHistory)))
+		messages = append(messages, filteredHistory...)
 	}
 
 	req := ai.ChatRequest{
-		Model:       model,
+		Model:       a.config.Model,
 		Messages:    convertMessagesToChatRequest(messages),
 		Stream:      false,
 		Temperature: a.config.Temperature,
@@ -190,13 +198,13 @@ func (a *ChatAgent) ChatWithImages(ctx context.Context, conversationID, message 
 		MaxTokens:   a.config.MaxTokens,
 	}
 
-	tools := a.getToolsForModel("vision")
-	logger.Info(fmt.Sprintf("[ChatWithImages] Filtered %d tool(s) for vision model", len(tools)))
+	tools := a.getTools()
+	logger.Info(fmt.Sprintf("[ChatWithImages] Filtered %d tool(s)", len(tools)))
 	if len(tools) > 0 {
 		req.Tools = convertToolsToChatRequest(tools)
 		logger.Info(fmt.Sprintf("[ChatWithImages] Added %d tool(s) to request", len(tools)))
 	} else {
-		logger.Warn("[ChatWithImages] No tools available - check AI_VISION_MODEL_TOOLS configuration")
+		logger.Warn("[ChatWithImages] No tools available - check AI_TOOLS configuration")
 	}
 
 	resp, err := a.config.Provider.Complete(ctx, req)
@@ -215,15 +223,17 @@ func (a *ChatAgent) ChatWithImages(ctx context.Context, conversationID, message 
 
 	if len(choice.Message.ToolCalls) > 0 {
 		logger.Info(fmt.Sprintf("[ChatWithImages] Model requested %d tool call(s)", len(choice.Message.ToolCalls)))
-		return a.handleToolCalls(ctx, conversationID, choice.Message)
+		return a.handleToolCalls(ctx, conversationID, choice.Message, opts)
 	}
 
-	assistantMsg := memory.Message{
-		Role:      "assistant",
-		Content:   choice.Message.Content,
-		Timestamp: time.Now(),
+	if !opts.NoHistory {
+		assistantMsg := memory.Message{
+			Role:      "assistant",
+			Content:   choice.Message.Content,
+			Timestamp: time.Now(),
+		}
+		a.config.History.AddMessage(conversationID, assistantMsg)
 	}
-	a.config.History.AddMessage(conversationID, assistantMsg)
 
 	if contentStr, ok := choice.Message.Content.(string); ok {
 		thinking := choice.Message.ReasoningContent
@@ -250,7 +260,7 @@ func (a *ChatAgent) ClearHistory(conversationID string) error {
 	return a.config.History.ClearHistory(conversationID)
 }
 
-func (a *ChatAgent) getToolsForModel(modelType string) []tool.Tool {
+func (a *ChatAgent) getTools() []tool.Tool {
 	allTools := a.config.ToolRegistry.GetAll()
 
 	var result []tool.Tool
@@ -259,29 +269,7 @@ func (a *ChatAgent) getToolsForModel(modelType string) []tool.Tool {
 			continue
 		}
 
-		compatible := false
-		switch t.Category {
-		case tool.CategoryText:
-			compatible = (modelType == "text")
-		case tool.CategoryVision:
-			compatible = (modelType == "vision")
-		case tool.CategoryBoth:
-			compatible = true
-		}
-
-		if !compatible {
-			continue
-		}
-
-		enabled := false
-		switch modelType {
-		case "text":
-			enabled = contains(a.config.TextToolsEnabled, t.Name)
-		case "vision":
-			enabled = contains(a.config.VisionToolsEnabled, t.Name)
-		}
-
-		if enabled {
+		if contains(a.config.ToolsEnabled, t.Name) {
 			result = append(result, t)
 		}
 	}
@@ -298,16 +286,18 @@ func contains(slice []string, item string) bool {
 	return false
 }
 
-func (a *ChatAgent) handleToolCalls(ctx context.Context, conversationID string, assistantMsg ai.Message) (*ChatResult, error) {
+func (a *ChatAgent) handleToolCalls(ctx context.Context, conversationID string, assistantMsg ai.Message, opts ChatOptions) (*ChatResult, error) {
 	logger.Info(fmt.Sprintf("[ToolCall] Received %d tool call(s)", len(assistantMsg.ToolCalls)))
 
-	assistantMemoryMsg := memory.Message{
-		Role:      "assistant",
-		Content:   assistantMsg.Content,
-		ToolCalls: convertToolCallsToMemory(assistantMsg.ToolCalls),
-		Timestamp: time.Now(),
+	if !opts.NoHistory {
+		assistantMemoryMsg := memory.Message{
+			Role:      "assistant",
+			Content:   assistantMsg.Content,
+			ToolCalls: convertToolCallsToMemory(assistantMsg.ToolCalls),
+			Timestamp: time.Now(),
+		}
+		a.config.History.AddMessage(conversationID, assistantMemoryMsg)
 	}
-	a.config.History.AddMessage(conversationID, assistantMemoryMsg)
 
 	for _, toolCall := range assistantMsg.ToolCalls {
 		logger.Info(fmt.Sprintf("[ToolCall] Executing tool: %s with args: %s", toolCall.Function.Name, toolCall.Function.Arguments))
@@ -320,34 +310,34 @@ func (a *ChatAgent) handleToolCalls(ctx context.Context, conversationID string, 
 			logger.Info(fmt.Sprintf("[ToolCall] Tool %s executed successfully, result length: %d", toolCall.Function.Name, len(result)))
 		}
 
-		toolMsg := memory.Message{
-			Role:       "tool",
-			Content:    result,
-			ToolCallID: toolCall.ID,
-			Timestamp:  time.Now(),
+		if !opts.NoHistory {
+			toolMsg := memory.Message{
+				Role:       "tool",
+				Content:    result,
+				ToolCallID: toolCall.ID,
+				Timestamp:  time.Now(),
+			}
+			a.config.History.AddMessage(conversationID, toolMsg)
 		}
-		a.config.History.AddMessage(conversationID, toolMsg)
 	}
 
 	logger.Info("[ToolCall] Sending final request to model with tool results")
 
 	messages := []ai.Message{{Role: "system", Content: a.config.SystemPrompt}}
-	history, _ := a.config.History.GetHistory(conversationID)
-	messages = append(messages, convertMessagesToChatRequest(history)...)
 
-	model := a.config.TextModel
-	if a.config.UseUnified {
-		model = a.config.UnifiedModel
+	if !opts.NoHistory {
+		history, _ := a.config.History.GetHistory(conversationID)
+		messages = append(messages, convertMessagesToChatRequest(history)...)
 	}
 
 	req := ai.ChatRequest{
-		Model:       model,
+		Model:       a.config.Model,
 		Messages:    messages,
 		Stream:      false,
 		Temperature: a.config.Temperature,
 	}
 
-	tools := a.getToolsForModel("text")
+	tools := a.getTools()
 	if len(tools) > 0 {
 		req.Tools = convertToolsToChatRequest(tools)
 	}
@@ -360,12 +350,14 @@ func (a *ChatAgent) handleToolCalls(ctx context.Context, conversationID string, 
 	if len(resp.Choices) > 0 {
 		content := resp.Choices[0].Message.Content
 		if contentStr, ok := content.(string); ok {
-			assistantMsg := memory.Message{
-				Role:      "assistant",
-				Content:   contentStr,
-				Timestamp: time.Now(),
+			if !opts.NoHistory {
+				assistantMsg := memory.Message{
+					Role:      "assistant",
+					Content:   contentStr,
+					Timestamp: time.Now(),
+				}
+				a.config.History.AddMessage(conversationID, assistantMsg)
 			}
-			a.config.History.AddMessage(conversationID, assistantMsg)
 
 			thinking := resp.Choices[0].Message.ReasoningContent
 			content := contentStr

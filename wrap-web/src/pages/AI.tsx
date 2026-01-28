@@ -73,17 +73,8 @@ export function AI() {
     }
   };
 
-  const getToolCategoryBadge = (category: string) => {
-    switch (category) {
-      case 'text':
-        return <Badge variant="secondary">文本</Badge>;
-      case 'vision':
-        return <Badge variant="secondary">视觉</Badge>;
-      case 'both':
-        return <Badge>通用</Badge>;
-      default:
-        return null;
-    }
+  const getToolStatusBadge = (enabled: boolean) => {
+    return enabled ? <Badge>已启用</Badge> : <Badge variant="secondary">未启用</Badge>;
   };
 
   return (
@@ -115,19 +106,11 @@ export function AI() {
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <h3 className="font-semibold">{tool.name}</h3>
-                        {getToolCategoryBadge(tool.category)}
+                        {getToolStatusBadge(tool.enabled)}
                       </div>
                       <p className="text-sm text-muted-foreground">
                         {tool.description}
                       </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Badge variant={tool.text_enabled ? 'default' : 'secondary'}>
-                        文本
-                      </Badge>
-                      <Badge variant={tool.vision_enabled ? 'default' : 'secondary'}>
-                        视觉
-                      </Badge>
                     </div>
                   </div>
                 ))}

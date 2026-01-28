@@ -55,17 +55,13 @@ func (f *Factory) CreateAgent() *agent.ChatAgent {
 		ToolRegistry: f.CreateToolRegistry(),
 		SystemPrompt: f.loadSystemPrompt(),
 
-		UnifiedModel: f.config.AIUnifiedModel,
-		TextModel:    f.config.TextModel,
-		VisionModel:  f.config.VisionModel,
-		UseUnified:   f.config.AIUseUnified,
+		Model: f.config.Model,
 
 		Temperature: f.config.Temperature,
 		TopP:        f.config.TopP,
 		MaxTokens:   f.config.MaxTokens,
 
-		TextToolsEnabled:    f.config.TextToolsEnabled,
-		VisionToolsEnabled:  f.config.VisionToolsEnabled,
+		ToolsEnabled: f.config.ToolsEnabled,
 	})
 }
 
