@@ -335,11 +335,6 @@ func (a *ChatAgent) handleToolCalls(ctx context.Context, conversationID string, 
 		Temperature: a.config.Temperature,
 	}
 
-	tools := a.getTools()
-	if len(tools) > 0 {
-		req.Tools = convertToolsToChatRequest(tools)
-	}
-
 	resp, err := a.config.Provider.Complete(ctx, req)
 	if err != nil {
 		return nil, err
