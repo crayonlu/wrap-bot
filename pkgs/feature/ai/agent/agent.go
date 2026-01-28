@@ -68,9 +68,8 @@ func (a *ChatAgent) ChatWithOptions(ctx context.Context, conversationID, message
 
 	if !opts.NoHistory {
 		history, _ := a.config.History.GetHistory(conversationID)
-		filteredHistory := filterImageMessages(history)
-		logger.Info(fmt.Sprintf("[Chat] History size: %d -> %d (after filtering images)", len(history), len(filteredHistory)))
-		messages = append(messages, filteredHistory...)
+		logger.Info(fmt.Sprintf("[Chat] History size: %d messages", len(history)))
+		messages = append(messages, history...)
 	}
 
 	req := ai.ChatRequest{
@@ -184,9 +183,8 @@ func (a *ChatAgent) ChatWithImagesAndOptions(ctx context.Context, conversationID
 
 	if !opts.NoHistory {
 		history, _ := a.config.History.GetHistory(conversationID)
-		filteredHistory := filterToolCallMessages(history)
-		logger.Info(fmt.Sprintf("[ChatWithImages] History size: %d -> %d (after filtering tool calls)", len(history), len(filteredHistory)))
-		messages = append(messages, filteredHistory...)
+		logger.Info(fmt.Sprintf("[ChatWithImages] History size: %d messages", len(history)))
+		messages = append(messages, history...)
 	}
 
 	req := ai.ChatRequest{
@@ -380,49 +378,6 @@ func (a *ChatAgent) handleToolCalls(ctx context.Context, conversationID string, 
 	}
 
 	return nil, fmt.Errorf("no response after tool call")
-}
-
-func filterToolCallMessages(messages []memory.Message) []memory.Message {
-	result := make([]memory.Message, 0, len(messages))
-	for _, msg := range messages {
-		if msg.Role == "assistant" && len(msg.ToolCalls) > 0 {
-			cleanMsg := memory.Message{
-				Role:    msg.Role,
-				Content: msg.Content,
-			}
-			result = append(result, cleanMsg)
-			continue
-		}
-		if msg.Role == "tool" {
-			continue
-		}
-		result = append(result, msg)
-	}
-	return result
-}
-
-func filterImageMessages(messages []memory.Message) []memory.Message {
-	result := make([]memory.Message, 0, len(messages))
-	for _, msg := range messages {
-		if contentItems, ok := msg.Content.([]ai.ContentItem); ok {
-			var textParts []string
-			for _, item := range contentItems {
-				if item.Type == "text" && item.Text != "" {
-					textParts = append(textParts, item.Text)
-				}
-			}
-			if len(textParts) > 0 {
-				cleanMsg := memory.Message{
-					Role:    msg.Role,
-					Content: strings.Join(textParts, "\n"),
-				}
-				result = append(result, cleanMsg)
-			}
-			continue
-		}
-		result = append(result, msg)
-	}
-	return result
 }
 
 func convertMessagesToChatRequest(messages []memory.Message) []ai.Message {

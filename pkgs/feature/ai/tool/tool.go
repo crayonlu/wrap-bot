@@ -8,18 +8,9 @@ import (
 	"github.com/crayon/wrap-bot/pkgs/logger"
 )
 
-type ToolCategory string
-
-const (
-	CategoryText   ToolCategory = "text"
-	CategoryVision ToolCategory = "vision"
-	CategoryBoth   ToolCategory = "both"
-)
-
 type Tool struct {
 	Name        string
 	Description string
-	Category    ToolCategory
 	Parameters  map[string]interface{}
 	Handler     ToolHandler
 	Enabled     bool
@@ -32,7 +23,6 @@ type ToolRegistry interface {
 	Unregister(name string) error
 	Get(name string) (Tool, bool)
 	GetAll() []Tool
-	GetByCategory(category ToolCategory) []Tool
 	GetEnabled() []Tool
 	Execute(ctx context.Context, name string, args string) (string, error)
 }
@@ -76,19 +66,6 @@ func (r *DefaultToolRegistry) GetAll() []Tool {
 	result := make([]Tool, 0, len(r.tools))
 	for _, tool := range r.tools {
 		result = append(result, tool)
-	}
-	return result
-}
-
-func (r *DefaultToolRegistry) GetByCategory(category ToolCategory) []Tool {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	var result []Tool
-	for _, tool := range r.tools {
-		if tool.Category == category || tool.Category == CategoryBoth {
-			result = append(result, tool)
-		}
 	}
 	return result
 }

@@ -14,7 +14,6 @@ func RegisterWeatherTools(registry tool.ToolRegistry, client *WeatherAPIClient) 
 		{
 			Name:        "get_weather",
 			Description: "获取当前天气",
-			Category:    tool.CategoryBoth,
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
@@ -31,7 +30,6 @@ func RegisterWeatherTools(registry tool.ToolRegistry, client *WeatherAPIClient) 
 		{
 			Name:        "get_weather_forecast",
 			Description: "获取天气预报",
-			Category:    tool.CategoryBoth,
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
