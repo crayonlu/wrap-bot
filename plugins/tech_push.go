@@ -22,21 +22,12 @@ func TechPushPlugin(cfg *config.Config) bot.HandlerFunc {
 		aiCfg := &aiconfig.Config{
 			APIURL:           cfg.AIURL,
 			APIKey:           cfg.AIKey,
-
-			AIUnifiedModel: cfg.AIUnifiedModel,
-			AIUseUnified:   cfg.AIUseUnified,
-
-			TextModel:        cfg.AITextModel,
-			VisionModel:      cfg.AIVisionModel,
-
+			Model:            cfg.AIModel,
 			Temperature:      0.7,
 			TopP:             0.9,
 			MaxTokens:        2000,
 			MaxHistory:       20,
-
-			TextToolsEnabled:    cfg.AITextToolsEnabled,
-			VisionToolsEnabled:  cfg.AIVisionToolsEnabled,
-
+			ToolsEnabled:     cfg.AIToolsEnabled,
 			SystemPromptPath: cfg.SystemPromptPath,
 			SerpAPIKey:       cfg.SerpAPIKey,
 			WeatherAPIKey:    cfg.WeatherAPIKey,

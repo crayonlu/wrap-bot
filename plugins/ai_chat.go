@@ -22,28 +22,23 @@ func AIChatPlugin(cfg *config.Config) bot.HandlerFunc {
 		APIURL: cfg.AIURL,
 		APIKey: cfg.AIKey,
 
-		AIUnifiedModel: cfg.AIUnifiedModel,
-		AIUseUnified:   cfg.AIUseUnified,
+		Model: cfg.AIModel,
 
-		TextModel:   cfg.AITextModel,
-		VisionModel: cfg.AIVisionModel,
-
-		Temperature:        0.7,
-		TopP:               0.9,
-		MaxTokens:          2000,
-		MaxHistory:         20,
-		SystemPromptPath:   cfg.SystemPromptPath,
-		SerpAPIKey:         cfg.SerpAPIKey,
-		WeatherAPIKey:      cfg.WeatherAPIKey,
-		TextToolsEnabled:   cfg.AITextToolsEnabled,
-		VisionToolsEnabled: cfg.AIVisionToolsEnabled,
+		Temperature:      0.7,
+		TopP:             0.9,
+		MaxTokens:        2000,
+		MaxHistory:       20,
+		SystemPromptPath: cfg.SystemPromptPath,
+		SerpAPIKey:       cfg.SerpAPIKey,
+		WeatherAPIKey:    cfg.WeatherAPIKey,
+		ToolsEnabled:     cfg.AIToolsEnabled,
 	}
 
 	factory := factory.NewFactory(aiCfg)
 	chatAgent := factory.CreateAgent()
 
-	logger.Info(fmt.Sprintf("[AIChatPlugin] Initialized with %d text tools and %d vision tools",
-		len(aiCfg.TextToolsEnabled), len(aiCfg.VisionToolsEnabled)))
+	logger.Info(fmt.Sprintf("[AIChatPlugin] Initialized with %d tools",
+		len(aiCfg.ToolsEnabled)))
 
 	return func(ctx *bot.Context) {
 		if !ctx.Event.IsGroupMessage() && !ctx.Event.IsPrivateMessage() {

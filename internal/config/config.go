@@ -23,30 +23,26 @@ type Config struct {
 	AIURL     string
 	AIKey     string
 
-	AIUnifiedModel string
-	AIUseUnified   bool
+	AIModel string
 
-	AITextModel          string
-	AIVisionModel        string
-	AIImageDetail        string
-	SystemPromptPath     string
-	AnalyzerPromptPath   string
-	HotApiHost           string
-	HotApiKey            string
-	TechPushGroups       []int64
-	TechPushUsers        []int64
-	RssPushGroups        []int64
-	RssPushUsers         []int64
-	AllowedUsers         []int64
-	AllowedGroups        []int64
-	RSSApiHost           string
-	AdminUsername        string
-	AdminPassword        string
-	JWTSecret            string
-	SerpAPIKey           string
-	WeatherAPIKey        string
-	AITextToolsEnabled   []string
-	AIVisionToolsEnabled []string
+	AIImageDetail      string
+	SystemPromptPath   string
+	AnalyzerPromptPath string
+	HotApiHost         string
+	HotApiKey          string
+	TechPushGroups     []int64
+	TechPushUsers      []int64
+	RssPushGroups      []int64
+	RssPushUsers       []int64
+	AllowedUsers       []int64
+	AllowedGroups      []int64
+	RSSApiHost         string
+	AdminUsername      string
+	AdminPassword      string
+	JWTSecret          string
+	SerpAPIKey         string
+	WeatherAPIKey      string
+	AIToolsEnabled     []string
 }
 
 func Load() *Config {
@@ -64,11 +60,8 @@ func Load() *Config {
 		AIURL:           getEnv("AI_URL", "https://api.siliconflow.cn/v1/chat/completions"),
 		AIKey:           getEnv("AI_KEY", "YOUR_API_KEY_HERE"),
 
-		AIUnifiedModel: getEnv("AI_UNIFIED_MODEL", ""),
-		AIUseUnified:   getEnvBool("AI_USE_UNIFIED", false),
+		AIModel: getEnv("AI_MODEL", "deepseek/deepseek-r1-turbo"),
 
-		AITextModel:        getEnv("AI_TEXT_MODEL", "deepseek/deepseek-r1-turbo"),
-		AIVisionModel:      getEnv("AI_VISION_MODEL", "qwen/qwen3-vl-235b-a22b-thinking"),
 		AIImageDetail:      getEnv("AI_IMAGE_DETAIL", "auto"),
 		SystemPromptPath:   getEnv("SYSTEM_PROMPT_PATH", "configs/system_prompt.md"),
 		AnalyzerPromptPath: getEnv("ANALYZER_PROMPT_PATH", "configs/analyzer_prompt.md"),
@@ -86,8 +79,7 @@ func Load() *Config {
 		JWTSecret:          getEnv("JWT_SECRET", ""),
 		SerpAPIKey:         getEnv("SERP_API_KEY", ""),
 		WeatherAPIKey:      getEnv("WEATHER_API_KEY", ""),
-		AITextToolsEnabled:   getEnvStringSlice("AI_TEXT_MODEL_TOOLS", []string{}),
-		AIVisionToolsEnabled: getEnvStringSlice("AI_VISION_MODEL_TOOLS", []string{}),
+		AIToolsEnabled:     getEnvStringSlice("AI_TOOLS", []string{}),
 	}
 
 	logger.Info("================================================")
@@ -102,10 +94,7 @@ func Load() *Config {
 	logger.Info("  CommandPrefix: " + cfg.CommandPrefix)
 	logger.Info("  AIEnabled: " + strconv.FormatBool(cfg.AIEnabled))
 	logger.Info("  AIURL: " + cfg.AIURL)
-	logger.Info("  AIUnifiedModel: " + cfg.AIUnifiedModel)
-	logger.Info("  AIUseUnified: " + strconv.FormatBool(cfg.AIUseUnified))
-	logger.Info("  AITextModel: " + cfg.AITextModel)
-	logger.Info("  AIVisionModel: " + cfg.AIVisionModel)
+	logger.Info("  AIModel: " + cfg.AIModel)
 	logger.Info("  AIImageDetail: " + cfg.AIImageDetail)
 	logger.Info("  SystemPromptPath: " + cfg.SystemPromptPath)
 	logger.Info("  AnalyzerPromptPath: " + cfg.AnalyzerPromptPath)
@@ -118,8 +107,7 @@ func Load() *Config {
 	logger.Info("  AllowedGroups: " + strings.Join(int64SliceToString(cfg.AllowedGroups), ","))
 	logger.Info("  RSSApiHost: " + cfg.RSSApiHost)
 	logger.Info("  AdminUsername: " + cfg.AdminUsername)
-	logger.Info("  AITextToolsEnabled: " + strings.Join(cfg.AITextToolsEnabled, ","))
-	logger.Info("  AIVisionToolsEnabled: " + strings.Join(cfg.AIVisionToolsEnabled, ","))
+	logger.Info("  AIToolsEnabled: " + strings.Join(cfg.AIToolsEnabled, ","))
 	logger.Info("  SerpAPIKey: " + maskKey(cfg.SerpAPIKey))
 	logger.Info("  WeatherAPIKey: " + maskKey(cfg.WeatherAPIKey))
 	logger.Info("================================================")

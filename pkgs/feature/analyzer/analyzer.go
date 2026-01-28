@@ -74,9 +74,8 @@ func (a *Analyzer) Analyze(content string) (string, error) {
 %s`, analyzerPrompt, content)
 
 	conversationID := "tech_analysis"
-	a.agent.ClearHistory(conversationID)
 
-	result, err := a.agent.Chat(context.Background(), conversationID, prompt)
+	result, err := a.agent.ChatWithOptions(context.Background(), conversationID, prompt, agent.ChatOptions{NoHistory: true})
 	if err != nil {
 		return "", err
 	}

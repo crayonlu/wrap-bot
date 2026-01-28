@@ -26,44 +26,33 @@ func GetAITools(c echo.Context) error {
 	initAI()
 
 	cfg := config.Load()
-	textTools := cfg.TextToolsEnabled
-	visionTools := cfg.VisionToolsEnabled
+	enabledTools := cfg.ToolsEnabled
 
 	tools := []types.AITool{
 		{
 			Name:        "get_current_time",
 			Description: "获取当前时间",
-			Category:    "both",
-			TextEnabled:  contains(textTools, "get_current_time"),
-			VisionEnabled: contains(visionTools, "get_current_time"),
+			Enabled:     contains(enabledTools, "get_current_time"),
 		},
 		{
 			Name:        "parse_relative_time",
 			Description: "解析相对时间表达式（如'3天后'）",
-			Category:    "both",
-			TextEnabled:  contains(textTools, "parse_relative_time"),
-			VisionEnabled: contains(visionTools, "parse_relative_time"),
+			Enabled:     contains(enabledTools, "parse_relative_time"),
 		},
 		{
 			Name:        "web_search",
 			Description: "网络搜索",
-			Category:    "both",
-			TextEnabled:  contains(textTools, "web_search"),
-			VisionEnabled: contains(visionTools, "web_search"),
+			Enabled:     contains(enabledTools, "web_search"),
 		},
 		{
 			Name:        "get_weather",
 			Description: "获取当前天气",
-			Category:    "both",
-			TextEnabled:  contains(textTools, "get_weather"),
-			VisionEnabled: contains(visionTools, "get_weather"),
+			Enabled:     contains(enabledTools, "get_weather"),
 		},
 		{
 			Name:        "get_weather_forecast",
 			Description: "获取天气预报",
-			Category:    "both",
-			TextEnabled:  contains(textTools, "get_weather_forecast"),
-			VisionEnabled: contains(visionTools, "get_weather_forecast"),
+			Enabled:     contains(enabledTools, "get_weather_forecast"),
 		},
 	}
 

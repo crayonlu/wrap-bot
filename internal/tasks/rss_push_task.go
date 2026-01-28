@@ -21,22 +21,17 @@ func NewRssPushTask(cfg *config.Config) *RssPushTask {
 
 	if cfg.AIEnabled {
 		aiCfg := &aiconfig.Config{
-			APIURL:           cfg.AIURL,
-			APIKey:           cfg.AIKey,
+			APIURL: cfg.AIURL,
+			APIKey: cfg.AIKey,
 
-			AIUnifiedModel: cfg.AIUnifiedModel,
-			AIUseUnified:   cfg.AIUseUnified,
+			Model: cfg.AIModel,
 
-			TextModel:        cfg.AITextModel,
-			VisionModel:      cfg.AIVisionModel,
+			Temperature: 0.7,
+			TopP:        0.9,
+			MaxTokens:   2000,
+			MaxHistory:  5,
 
-			Temperature:      0.7,
-			TopP:             0.9,
-			MaxTokens:        2000,
-			MaxHistory:       5,
-
-			TextToolsEnabled:    cfg.AITextToolsEnabled,
-			VisionToolsEnabled:  cfg.AIVisionToolsEnabled,
+			ToolsEnabled: cfg.AIToolsEnabled,
 
 			SystemPromptPath: cfg.SystemPromptPath,
 			SerpAPIKey:       cfg.SerpAPIKey,
