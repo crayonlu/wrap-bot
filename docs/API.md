@@ -255,24 +255,9 @@ Get all configuration keys and their current values.
     "description": "是否启用 AI 功能"
   },
   {
-    "key": "AI_USE_UNIFIED",
-    "value": "false",
-    "description": "是否使用统一模型"
-  },
-  {
-    "key": "AI_UNIFIED_MODEL",
-    "value": "",
-    "description": "统一模型名称"
-  },
-  {
-    "key": "AI_TEXT_MODEL",
+    "key": "AI_MODEL",
     "value": "deepseek/deepseek-r1-turbo",
-    "description": "Text 模型名称"
-  },
-  {
-    "key": "AI_VISION_MODEL",
-    "value": "qwen/qwen3-vl-235b-a22b-thinking",
-    "description": "Vision 模型名称"
+    "description": "AI 模型名称"
   }
 ]
 ```
@@ -292,17 +277,13 @@ Get all configuration keys and their current values.
 | `AI_ENABLED` | Whether AI features are enabled |
 | `AI_URL` | AI API address |
 | `AI_KEY` | AI API key |
-| `AI_USE_UNIFIED` | Whether to use unified model mode |
-| `AI_UNIFIED_MODEL` | Unified model name |
-| `AI_TEXT_MODEL` | Text model name |
-| `AI_VISION_MODEL` | Vision model name |
+| `AI_MODEL` | AI model name |
 | `AI_TEMPERATURE` | AI temperature parameter |
 | `AI_TOP_P` | AI Top-P parameter |
 | `AI_MAX_TOKENS` | AI max tokens |
 | `AI_MAX_HISTORY` | AI max history records |
 | `AI_IMAGE_DETAIL` | Image processing detail (high/low/auto) |
-| `AI_TEXT_MODEL_TOOLS` | Enabled tools for text model (comma-separated) |
-| `AI_VISION_MODEL_TOOLS` | Enabled tools for vision model (comma-separated) |
+| `AI_TOOLS` | Enabled tools (comma-separated) |
 | `SYSTEM_PROMPT_PATH` | System prompt path |
 | `ANALYZER_PROMPT_PATH` | Analyzer prompt path |
 | `HOT_API_HOST` | Hot API URL |
@@ -332,12 +313,8 @@ Update one or more configuration values.
     "value": "true"
   },
   {
-    "key": "AI_USE_UNIFIED",
-    "value": "true"
-  },
-  {
-    "key": "AI_UNIFIED_MODEL",
-    "value": "qwen/qwen2.5-72b-instruct"
+    "key": "AI_MODEL",
+    "value": "deepseek/deepseek-v3"
   }
 ]
 ```
@@ -561,37 +538,27 @@ Get all available AI tools and their status.
   {
     "name": "get_current_time",
     "description": "获取当前时间",
-    "category": "both",
-    "text_enabled": true,
-    "vision_enabled": true
+    "enabled": true
   },
   {
     "name": "parse_relative_time",
     "description": "解析相对时间表达式（如'3天后'）",
-    "category": "both",
-    "text_enabled": true,
-    "vision_enabled": true
+    "enabled": true
   },
   {
     "name": "web_search",
     "description": "网络搜索",
-    "category": "both",
-    "text_enabled": true,
-    "vision_enabled": true
+    "enabled": true
   },
   {
     "name": "get_weather",
     "description": "获取当前天气",
-    "category": "both",
-    "text_enabled": true,
-    "vision_enabled": true
+    "enabled": true
   },
   {
     "name": "get_weather_forecast",
     "description": "获取天气预报",
-    "category": "both",
-    "text_enabled": true,
-    "vision_enabled": true
+    "enabled": true
   }
 ]
 ```
@@ -599,22 +566,9 @@ Get all available AI tools and their status.
 **Fields**:
 - `name`: Tool name
 - `description`: Tool description
-- `category`: Tool category (`text`, `vision`, or `both`)
-- `text_enabled`: Whether the tool is enabled for text model
-- `vision_enabled`: Whether the tool is enabled for vision model
+- `enabled`: Whether the tool is enabled
 
-**Note**: Tool enablement is controlled by the `AI_TEXT_MODEL_TOOLS` and `AI_VISION_MODEL_TOOLS` environment variables. If these variables are empty, all tools are enabled by default.
-
-**Tool Categories**:
-- `text`: Tools available for text-only conversations
-- `vision`: Tools available for vision conversations
-- `both`: Tools available for both text and vision conversations
-
-**Notes**:
-- Tools are automatically matched to models based on their category
-- Tool categories are defined in tool registration
-- `text_enabled` indicates whether tool is enabled for text model
-- `vision_enabled` indicates whether tool is enabled for vision model
+**Note**: Tool enablement is controlled by the `AI_TOOLS` environment variable. If this variable is empty, all tools are enabled by default.
 
 ### POST /api/ai/chat
 
@@ -892,8 +846,7 @@ curl -X POST http://localhost:8080/api/config \
   -H "Authorization: Bearer your_token" \
   -H "Content-Type: application/json" \
   -d '[
-    {"key":"AI_USE_UNIFIED","value":"true"},
-    {"key":"AI_UNIFIED_MODEL","value":"qwen/qwen2.5-72b-instruct"}
+    {"key":"AI_MODEL","value":"deepseek/deepseek-v3"}
   ]'
 ```
 

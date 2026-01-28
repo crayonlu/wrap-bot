@@ -13,7 +13,6 @@ func RegisterTimeTools(registry tool.ToolRegistry) error {
 		{
 			Name:        "get_current_time",
 			Description: "获取当前时间",
-			Category:   tool.CategoryBoth,
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
@@ -29,7 +28,6 @@ func RegisterTimeTools(registry tool.ToolRegistry) error {
 		{
 			Name:        "parse_relative_time",
 			Description: "解析相对时间，如'3天后'",
-			Category:   tool.CategoryBoth,
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
@@ -46,7 +44,6 @@ func RegisterTimeTools(registry tool.ToolRegistry) error {
 		{
 			Name:        "format_time",
 			Description: "格式化时间显示",
-			Category:   tool.CategoryBoth,
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{

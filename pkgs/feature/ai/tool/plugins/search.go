@@ -14,7 +14,6 @@ func RegisterSearchTools(registry tool.ToolRegistry, client *SerpAPIClient) erro
 		{
 			Name:        "web_search",
 			Description: "网络搜索",
-			Category:   tool.CategoryBoth,
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
@@ -29,8 +28,8 @@ func RegisterSearchTools(registry tool.ToolRegistry, client *SerpAPIClient) erro
 				},
 				"required": []string{"query"},
 			},
-			Handler:    WebSearch(client),
-			Enabled:    true,
+			Handler: WebSearch(client),
+			Enabled: true,
 		},
 	}
 
