@@ -182,7 +182,8 @@ func stripHTML(htmlStr string) string {
 }
 
 func (rp *RssPush) formatFeedForAI(rss *RSS) string {
-	content := fmt.Sprintf("【%s】\n", rss.Channel.Title)
+	var builder strings.Builder
+	builder.WriteString(fmt.Sprintf("【%s】\n", rss.Channel.Title))
 
 	maxItems := len(rss.Channel.Items)
 	if maxItems > 5 {
@@ -191,8 +192,18 @@ func (rp *RssPush) formatFeedForAI(rss *RSS) string {
 
 	for i := 0; i < maxItems; i++ {
 		item := rss.Channel.Items[i]
-		content += fmt.Sprintf("%d. %s\n", i+1, item.Title)
+
+		desc := strings.TrimSpace(stripHTML(item.Description))
+		if len(desc) > 160 {
+			desc = desc[:160] + "..."
+		}
+
+		builder.WriteString(fmt.Sprintf("%d. %s\n链接: %s\n", i+1, item.Title, item.Link))
+		if desc != "" {
+			builder.WriteString(fmt.Sprintf("摘要: %s\n", desc))
+		}
+		builder.WriteString("\n")
 	}
 
-	return content
+	return strings.TrimSpace(builder.String())
 }

@@ -130,8 +130,11 @@ export function Logs() {
           </div>
         </CardHeader>
         <CardContent>
-          <ScrollArea className="h-[500px] lg:h-[600px] w-full rounded-md border p-4">
-            <div ref={scrollRef} className="space-y-2 font-mono text-sm">
+          <div
+            ref={scrollRef}
+            className="h-[500px] lg:h-[600px] w-full rounded-md border p-4 overflow-auto"
+          >
+            <div className="space-y-2 font-mono text-sm min-w-max">
               {filteredLogs.length === 0 ? (
                 <div className="flex h-full items-center justify-center text-muted-foreground">
                   <FileText className="mr-2 h-8 w-8" />
@@ -139,7 +142,7 @@ export function Logs() {
                 </div>
               ) : (
                 filteredLogs.map((log, index) => (
-                  <div key={index} className="flex gap-3">
+                  <div key={index} className="flex gap-3 whitespace-pre">
                     <span className="text-muted-foreground shrink-0">
                       {format(new Date(log.timestamp), 'HH:mm:ss')}
                     </span>
@@ -158,7 +161,7 @@ export function Logs() {
                 ))
               )}
             </div>
-          </ScrollArea>
+          </div>
         </CardContent>
       </Card>
     </div>
