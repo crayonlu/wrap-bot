@@ -19,4 +19,7 @@ func Register(engine *bot.Engine, cfg *config.Config) {
 	if cfg.RSSApiHost != "" {
 		engine.RegisterPlugin("rss_push", "RSS feed push service", RssPushPlugin(cfg))
 	}
+	if cfg.AIEnabled {
+		engine.RegisterPlugin("chat_explainer", "Chat explainer plugin", ChatExplainerPlugin(cfg))
+	}
 }
