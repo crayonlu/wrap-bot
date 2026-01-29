@@ -43,9 +43,26 @@ func (a *Analyzer) AnalyzeMessage(ctx context.Context, msg ChatMessage, prevMess
 			start = len(prevMessages) - 3
 		}
 		for _, prev := range prevMessages[start:] {
-			contextBuilder.WriteString(fmt.Sprintf("%s: %s\n", prev.SenderName, prev.Content))
+			content := prev.Content
+			if content == "" {
+				if len(prev.Images) > 0 {
+					content = "[图片]"
+				} else {
+					content = "[表情]"
+				}
+			}
+			contextBuilder.WriteString(fmt.Sprintf("%s: %s\n", prev.SenderName, content))
 		}
 		contextBuilder.WriteString("\n")
+	}
+
+	displayContent := msg.Content
+	if displayContent == "" {
+		if len(msg.Images) > 0 {
+			displayContent = "[图片消息，请直接分析图片内容]"
+		} else {
+			displayContent = "[表情或无文字内容]"
+		}
 	}
 
 	prompt := fmt.Sprintf(`%s请解读这条群聊消息：
@@ -54,7 +71,7 @@ func (a *Analyzer) AnalyzeMessage(ctx context.Context, msg ChatMessage, prevMess
 消息内容：%s
 
 请结合上下文理解这条消息在讨论什么，如果涉及专业术语请顺便解释一下。保持简洁，2-3句话即可。`,
-		contextBuilder.String(), msg.SenderName, msg.Content)
+		contextBuilder.String(), msg.SenderName, displayContent)
 
 	result, err := a.agent.ChatWithImages(ctx, fmt.Sprintf("explainer_%d", msg.MessageID), prompt, msg.Images)
 	if err != nil {
@@ -69,7 +86,15 @@ func (a *Analyzer) AnalyzeMessage(ctx context.Context, msg ChatMessage, prevMess
 func (a *Analyzer) AnalyzeBatch(ctx context.Context, messages []ChatMessage, individualAnalyses []MessageAnalysis) (*ChatAnalysis, error) {
 	var conversation strings.Builder
 	for i, msg := range messages {
-		conversation.WriteString(fmt.Sprintf("%s: %s\n", msg.SenderName, msg.Content))
+		content := msg.Content
+		if content == "" {
+			if len(msg.Images) > 0 {
+				content = "[图片]"
+			} else {
+				content = "[表情]"
+			}
+		}
+		conversation.WriteString(fmt.Sprintf("%s: %s\n", msg.SenderName, content))
 		if i < len(individualAnalyses) {
 			conversation.WriteString(fmt.Sprintf("[解读] %s\n", individualAnalyses[i].Content))
 		}
@@ -82,6 +107,11 @@ func (a *Analyzer) AnalyzeBatch(ctx context.Context, messages []ChatMessage, ind
 请提供：
 1. 对话的整体脉络（发生了什么、讨论了什么话题、结论是什么）
 2. 涉及的专业术语解释（按你觉得合适的方式组织）
+
+**重要规则：**
+- 必须基于上述实际提供的对话内容进行总结
+- 严禁编造或假设不存在的内容
+- 如果对话内容较少或简单，直接说明即可，不要过度解读
 
 用自然语言自由发挥，让总结清晰易懂。`, conversation.String())
 
