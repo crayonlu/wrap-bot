@@ -25,24 +25,25 @@ type Config struct {
 
 	AIModel string
 
-	AIImageDetail      string
-	SystemPromptPath   string
-	AnalyzerPromptPath string
-	HotApiHost         string
-	HotApiKey          string
-	TechPushGroups     []int64
-	TechPushUsers      []int64
-	RssPushGroups      []int64
-	RssPushUsers       []int64
-	AllowedUsers       []int64
-	AllowedGroups      []int64
-	RSSApiHost         string
-	AdminUsername      string
-	AdminPassword      string
-	JWTSecret          string
-	SerpAPIKey         string
-	WeatherAPIKey      string
-	AIToolsEnabled     []string
+	AIImageDetail       string
+	SystemPromptPath    string
+	AnalyzerPromptPath  string
+	HotApiHost          string
+	HotApiKey           string
+	TechPushGroups      []int64
+	TechPushUsers       []int64
+	RssPushGroups       []int64
+	RssPushUsers        []int64
+	AllowedUsers        []int64
+	AllowedGroups       []int64
+	RSSApiHost          string
+	AdminUsername       string
+	AdminPassword       string
+	JWTSecret           string
+	SerpAPIKey          string
+	WeatherAPIKey       string
+	AIToolsEnabled      []string
+	ChatExplainerPrompt string
 }
 
 func Load() *Config {
@@ -62,24 +63,25 @@ func Load() *Config {
 
 		AIModel: getEnv("AI_MODEL", "deepseek/deepseek-r1-turbo"),
 
-		AIImageDetail:      getEnv("AI_IMAGE_DETAIL", "auto"),
-		SystemPromptPath:   getEnv("SYSTEM_PROMPT_PATH", "configs/system_prompt.md"),
-		AnalyzerPromptPath: getEnv("ANALYZER_PROMPT_PATH", "configs/analyzer_prompt.md"),
-		HotApiHost:         getEnv("HOT_API_HOST", "https://hot-api.crayoncreator.top"),
-		HotApiKey:          getEnv("HOT_API_KEY", "keykeykey"),
-		TechPushGroups:     getEnvInt64Slice("TECH_PUSH_GROUPS", []int64{}),
-		TechPushUsers:      getEnvInt64Slice("TECH_PUSH_USERS", []int64{}),
-		RssPushGroups:      getEnvInt64Slice("RSS_PUSH_GROUPS", []int64{}),
-		RssPushUsers:       getEnvInt64Slice("RSS_PUSH_USERS", []int64{}),
-		AllowedUsers:       getEnvInt64Slice("ALLOWED_USERS", []int64{}),
-		AllowedGroups:      getEnvInt64Slice("ALLOWED_GROUPS", []int64{}),
-		RSSApiHost:         getEnv("RSS_API_HOST", "https://rsshub.rssforever.com"),
-		AdminUsername:      getEnv("ADMIN_USERNAME", "admin"),
-		AdminPassword:      getEnv("ADMIN_PASSWORD", ""),
-		JWTSecret:          getEnv("JWT_SECRET", ""),
-		SerpAPIKey:         getEnv("SERP_API_KEY", ""),
-		WeatherAPIKey:      getEnv("WEATHER_API_KEY", ""),
-		AIToolsEnabled:     getEnvStringSlice("AI_TOOLS", []string{}),
+		AIImageDetail:       getEnv("AI_IMAGE_DETAIL", "auto"),
+		SystemPromptPath:    getEnv("SYSTEM_PROMPT_PATH", "configs/system_prompt.md"),
+		AnalyzerPromptPath:  getEnv("ANALYZER_PROMPT_PATH", "configs/analyzer_prompt.md"),
+		HotApiHost:          getEnv("HOT_API_HOST", "https://hot-api.crayoncreator.top"),
+		HotApiKey:           getEnv("HOT_API_KEY", "keykeykey"),
+		TechPushGroups:      getEnvInt64Slice("TECH_PUSH_GROUPS", []int64{}),
+		TechPushUsers:       getEnvInt64Slice("TECH_PUSH_USERS", []int64{}),
+		RssPushGroups:       getEnvInt64Slice("RSS_PUSH_GROUPS", []int64{}),
+		RssPushUsers:        getEnvInt64Slice("RSS_PUSH_USERS", []int64{}),
+		AllowedUsers:        getEnvInt64Slice("ALLOWED_USERS", []int64{}),
+		AllowedGroups:       getEnvInt64Slice("ALLOWED_GROUPS", []int64{}),
+		RSSApiHost:          getEnv("RSS_API_HOST", "https://rsshub.rssforever.com"),
+		AdminUsername:       getEnv("ADMIN_USERNAME", "admin"),
+		AdminPassword:       getEnv("ADMIN_PASSWORD", ""),
+		JWTSecret:           getEnv("JWT_SECRET", ""),
+		SerpAPIKey:          getEnv("SERP_API_KEY", ""),
+		WeatherAPIKey:       getEnv("WEATHER_API_KEY", ""),
+		AIToolsEnabled:      getEnvStringSlice("AI_TOOLS", []string{}),
+		ChatExplainerPrompt: getEnv("CHAT_EXPLAINER_PROMPT", "configs/chat_explainer_prompt.md"),
 	}
 
 	logger.Info("================================================")
