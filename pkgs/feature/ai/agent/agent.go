@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"regexp"
-	"strings"
 	"time"
 
 	"github.com/crayon/wrap-bot/pkgs/feature/ai"
@@ -471,14 +470,12 @@ func convertToolsToChatRequest(tools []tool.Tool) []ai.Tool {
 
 func parseThinkTags(content string) (string, string) {
 	re := regexp.MustCompile(`(?s)<think>(.*?)</think>`)
-	matches := re.FindStringSubmatch(content)
-
-	if len(matches) > 1 {
-		thinkContent := matches[1]
-		cleanContent := re.ReplaceAllString(content, "")
-		cleanContent = strings.TrimSpace(cleanContent)
-		return thinkContent, cleanContent
+	re2 := regexp.MustCompile(`(?s)^(.*?)</think>`)
+	if matches := re.FindStringSubmatch(content); len(matches) > 1 {
+		return matches[1], re.ReplaceAllString(content, "")
 	}
-
+	if matches := re2.FindStringSubmatch(content); len(matches) > 1 {
+		return matches[1], re2.ReplaceAllString(content, "")
+	}
 	return "", content
 }

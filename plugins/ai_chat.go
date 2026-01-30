@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/crayon/wrap-bot/internal/config"
@@ -42,6 +43,12 @@ func AIChatPlugin(cfg *config.Config) bot.HandlerFunc {
 
 	return func(ctx *bot.Context) {
 		if !ctx.Event.IsGroupMessage() && !ctx.Event.IsPrivateMessage() {
+			return
+		}
+
+		if hasForwardMessage(ctx.Event) {
+			eventJSON, _ := json.MarshalIndent(ctx.Event, "", "  ")
+			logger.Info(fmt.Sprintf("[AIChatPlugin] Received forward message, skipping AI chat. Event: %s", string(eventJSON)))
 			return
 		}
 
@@ -111,4 +118,23 @@ func AIChatPlugin(cfg *config.Config) bot.HandlerFunc {
 			ctx.ReplyText(response.Content)
 		}
 	}
+}
+
+func hasForwardMessage(event *bot.Event) bool {
+	if event.Message == nil {
+		return false
+	}
+
+	messageSegments, ok := event.Message.([]interface{})
+	if !ok || len(messageSegments) == 0 {
+		return false
+	}
+
+	if firstSeg, ok := messageSegments[0].(map[string]interface{}); ok {
+		if msgType, ok := firstSeg["type"].(string); ok {
+			return msgType == "forward"
+		}
+	}
+
+	return false
 }
