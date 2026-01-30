@@ -47,8 +47,19 @@ func AIChatPlugin(cfg *config.Config) bot.HandlerFunc {
 		}
 
 		if hasForwardMessage(ctx.Event) {
-			eventJSON, _ := json.MarshalIndent(ctx.Event, "", "  ")
-			logger.Info(fmt.Sprintf("[AIChatPlugin] Received forward message, skipping AI chat. Event: %s", string(eventJSON)))
+			forwardID := getForwardID(ctx.Event)
+			logger.Info(fmt.Sprintf("[AIChatPlugin] Received forward message, ID: %s", forwardID))
+
+			if napcatClient, ok := ctx.GetAPIClient().(*napcat.Client); ok && forwardID != "" {
+				forwardData, err := napcatClient.GetForwardMsg(forwardID)
+				if err != nil {
+					logger.Error(fmt.Sprintf("[AIChatPlugin] Failed to get forward message: %v", err))
+				} else {
+					forwardJSON, _ := json.MarshalIndent(forwardData, "", "  ")
+					logger.Info(fmt.Sprintf("[AIChatPlugin] Forward message detail:\n%s", string(forwardJSON)))
+				}
+			}
+
 			return
 		}
 
@@ -120,6 +131,7 @@ func AIChatPlugin(cfg *config.Config) bot.HandlerFunc {
 	}
 }
 
+// hasForwardMessage 检查事件是否包含合并转发消息
 func hasForwardMessage(event *bot.Event) bool {
 	if event.Message == nil {
 		return false
@@ -137,4 +149,26 @@ func hasForwardMessage(event *bot.Event) bool {
 	}
 
 	return false
+}
+
+// getForwardID 从事件中获取转发消息ID
+func getForwardID(event *bot.Event) string {
+	if event.Message == nil {
+		return ""
+	}
+
+	messageSegments, ok := event.Message.([]interface{})
+	if !ok || len(messageSegments) == 0 {
+		return ""
+	}
+
+	if firstSeg, ok := messageSegments[0].(map[string]interface{}); ok {
+		if data, ok := firstSeg["data"].(map[string]interface{}); ok {
+			if id, ok := data["id"].(string); ok {
+				return id
+			}
+		}
+	}
+
+	return ""
 }
