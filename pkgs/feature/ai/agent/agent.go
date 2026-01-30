@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/crayon/wrap-bot/pkgs/feature/ai"
@@ -175,15 +176,6 @@ func (a *ChatAgent) ChatWithImagesAndOptions(ctx context.Context, conversationID
 		content = message
 	}
 
-	if !opts.NoHistory {
-		userMsg := memory.Message{
-			Role:      "user",
-			Content:   content,
-			Timestamp: time.Now(),
-		}
-		a.config.History.AddMessage(conversationID, userMsg)
-	}
-
 	messages := []memory.Message{{Role: "system", Content: a.config.SystemPrompt}}
 
 	if !opts.NoHistory {
@@ -191,6 +183,12 @@ func (a *ChatAgent) ChatWithImagesAndOptions(ctx context.Context, conversationID
 		logger.Info(fmt.Sprintf("[ChatWithImages] History size: %d messages", len(history)))
 		messages = append(messages, history...)
 	}
+
+	messages = append(messages, memory.Message{
+		Role:      "user",
+		Content:   content,
+		Timestamp: time.Now(),
+	})
 
 	req := ai.ChatRequest{
 		Model:       a.config.Model,
@@ -230,6 +228,13 @@ func (a *ChatAgent) ChatWithImagesAndOptions(ctx context.Context, conversationID
 	}
 
 	if !opts.NoHistory {
+		userMsg := memory.Message{
+			Role:      "user",
+			Content:   content,
+			Timestamp: time.Now(),
+		}
+		a.config.History.AddMessage(conversationID, userMsg)
+
 		assistantMsg := memory.Message{
 			Role:      "assistant",
 			Content:   choice.Message.Content,
@@ -470,12 +475,23 @@ func convertToolsToChatRequest(tools []tool.Tool) []ai.Tool {
 
 func parseThinkTags(content string) (string, string) {
 	re := regexp.MustCompile(`(?s)<think>(.*?)</think>`)
-	re2 := regexp.MustCompile(`(?s)^(.*?)</think>`)
-	if matches := re.FindStringSubmatch(content); len(matches) > 1 {
-		return matches[1], re.ReplaceAllString(content, "")
+	matches := re.FindStringSubmatch(content)
+
+	if len(matches) > 1 {
+		thinkContent := matches[1]
+		cleanContent := re.ReplaceAllString(content, "")
+		cleanContent = strings.TrimSpace(cleanContent)
+		return thinkContent, cleanContent
 	}
-	if matches := re2.FindStringSubmatch(content); len(matches) > 1 {
-		return matches[1], re2.ReplaceAllString(content, "")
+
+	re2 := regexp.MustCompile(`(?s)(.*?)</think>`)
+	matches2 := re2.FindStringSubmatch(content)
+	if len(matches2) > 1 {
+		thinkContent := matches2[1]
+		cleanContent := re2.ReplaceAllString(content, "")
+		cleanContent = strings.TrimSpace(cleanContent)
+		return thinkContent, cleanContent
 	}
+
 	return "", content
 }

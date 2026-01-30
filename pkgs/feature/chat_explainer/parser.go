@@ -3,6 +3,7 @@ package chat_explainer
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/crayon/wrap-bot/pkgs/napcat"
@@ -25,6 +26,8 @@ func (p *Parser) ParseForwardMessage(data map[string]interface{}) (*ForwardedCha
 		chat.SourceGroup = groupName
 	}
 
+	parsedMessages := make([]ChatMessage, 0, len(messages))
+
 	for _, msg := range messages {
 		msgMap, ok := msg.(map[string]interface{})
 		if !ok {
@@ -32,10 +35,31 @@ func (p *Parser) ParseForwardMessage(data map[string]interface{}) (*ForwardedCha
 		}
 
 		chatMsg := p.parseSingleMessage(msgMap)
-		chat.Messages = append(chat.Messages, *chatMsg)
+		parsedMessages = append(parsedMessages, *chatMsg)
 	}
 
+	for i := range parsedMessages {
+		if replyID, ok := p.getReplyIDFromRaw(i, messages); ok {
+			parsedMessages[i].ReplyTo = p.FindMessageByID(parsedMessages, replyID)
+		}
+	}
+
+	chat.Messages = parsedMessages
+
 	return &chat, nil
+}
+
+func (p *Parser) getReplyIDFromRaw(index int, messages []interface{}) (int64, bool) {
+	if index >= len(messages) {
+		return 0, false
+	}
+
+	msgMap, ok := messages[index].(map[string]interface{})
+	if !ok {
+		return 0, false
+	}
+
+	return p.GetReplyID(msgMap)
 }
 
 func (p *Parser) parseSingleMessage(data map[string]interface{}) *ChatMessage {
@@ -206,4 +230,35 @@ func BuildForwardNodes(messages []ChatMessage, analyses []MessageAnalysis, summa
 	}
 
 	return nodes
+}
+
+func (p *Parser) GetReplyID(data map[string]interface{}) (int64, bool) {
+	if message, ok := data["message"].([]interface{}); ok {
+		for _, seg := range message {
+			segMap, ok := seg.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			if msgType, _ := segMap["type"].(string); msgType == "reply" {
+				if data, ok := segMap["data"].(map[string]interface{}); ok {
+					if id, ok := data["id"].(string); ok {
+						replyID, err := strconv.ParseInt(id, 10, 64)
+						if err == nil {
+							return replyID, true
+						}
+					}
+				}
+			}
+		}
+	}
+	return 0, false
+}
+
+func (p *Parser) FindMessageByID(messages []ChatMessage, id int64) *ChatMessage {
+	for i := range messages {
+		if messages[i].MessageID == id {
+			return &messages[i]
+		}
+	}
+	return nil
 }

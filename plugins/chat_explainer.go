@@ -33,7 +33,7 @@ func ChatExplainerPlugin(cfg *config.Config) bot.HandlerFunc {
 
 	factory := factory.NewFactory(aiCfg)
 	chatAgent := factory.CreateAgent()
-	analyzer := chat_explainer.NewAnalyzer(chatAgent)
+	analyzer := chat_explainer.NewAnalyzer(chatAgent, "", 20)
 	parser := chat_explainer.NewParser()
 
 	return func(ctx *bot.Context) {
