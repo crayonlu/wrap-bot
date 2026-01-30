@@ -27,7 +27,7 @@ func ChatExplainerPlugin(cfg *config.Config) bot.HandlerFunc {
 		TopP:             0.9,
 		MaxTokens:        2000,
 		MaxHistory:       0,
-		SystemPromptPath: cfg.ChatExplainerPrompt,
+		SystemPromptPath: cfg.SystemPromptPath,
 		ToolsEnabled:     []string{},
 	}
 

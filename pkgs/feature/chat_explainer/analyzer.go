@@ -66,7 +66,7 @@ func (a *Analyzer) chainAnalyze(ctx context.Context, config *ChainRequestConfig)
 	for i, msg := range config.Messages {
 		a.logger.Info(fmt.Sprintf("处理第 %d/%d 条消息，发送者: %s", i+1, len(config.Messages), msg.SenderName))
 
-		analysis, err := a.processSingleMessage(ctx, config.ConversationID, msg, i)
+		analysis, err := a.processSingleMessage(ctx, config.ConversationID, msg, i, result.MessageAnalyses)
 		if err != nil {
 			a.logger.Error(fmt.Sprintf("消息 %d 处理失败: %v", i+1, err))
 			result.Errors = append(result.Errors, fmt.Errorf("消息%d处理失败: %w", i+1, err))
@@ -102,8 +102,11 @@ func (a *Analyzer) chainAnalyze(ctx context.Context, config *ChainRequestConfig)
 	return result, nil
 }
 
-func (a *Analyzer) processSingleMessage(ctx context.Context, conversationID string, msg ChatMessage, index int) (string, error) {
-	prompt := a.buildSingleMessagePrompt(msg)
+func (a *Analyzer) processSingleMessage(ctx context.Context, conversationID string, msg ChatMessage, index int, previousAnalyses []MessageAnalysis) (string, error) {
+	prompt := a.buildSingleMessagePrompt(msg, previousAnalyses)
+
+	a.logger.Info(fmt.Sprintf("[Prompt] 消息%d，发送者: %s, 内容长度: %d", index+1, msg.SenderName, len(prompt)))
+	a.logger.Debug(fmt.Sprintf("[Prompt] 完整内容: %s", prompt))
 
 	var result *agent.ChatResult
 	var err error
@@ -122,10 +125,20 @@ func (a *Analyzer) processSingleMessage(ctx context.Context, conversationID stri
 	return analysis, nil
 }
 
-func (a *Analyzer) buildSingleMessagePrompt(msg ChatMessage) string {
+func (a *Analyzer) buildSingleMessagePrompt(msg ChatMessage, previousAnalyses []MessageAnalysis) string {
 	var prompt strings.Builder
 
-	prompt.WriteString("你是群聊对话解读助手。请分析以下这条群聊消息：\n\n")
+	prompt.WriteString("你是群聊对话解读助手。\n\n")
+
+	if len(previousAnalyses) > 0 {
+		prompt.WriteString("【对话上下文】以下是之前消息的分析结果，帮助你理解对话脉络：\n")
+		for i, analysis := range previousAnalyses {
+			prompt.WriteString(fmt.Sprintf("消息%d：%s\n", i+1, analysis.Content))
+		}
+		prompt.WriteString("\n")
+	}
+
+	prompt.WriteString("【当前消息】请分析以下这条群聊消息：\n")
 	prompt.WriteString(fmt.Sprintf("发送者：%s (ID: %d)\n", msg.SenderName, msg.SenderID))
 
 	if msg.Content != "" {
@@ -140,7 +153,7 @@ func (a *Analyzer) buildSingleMessagePrompt(msg ChatMessage) string {
 		prompt.WriteString(fmt.Sprintf("回复给：%s 的消息\n", msg.ReplyTo.SenderName))
 	}
 
-	prompt.WriteString("\n请用2-3句话解释这条消息在讨论什么，在对话中起什么作用。")
+	prompt.WriteString("\n请结合上面的对话上下文，用2-3句话解释这条消息在讨论什么，在对话中起什么作用。")
 
 	return prompt.String()
 }

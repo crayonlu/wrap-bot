@@ -131,7 +131,6 @@ func AIChatPlugin(cfg *config.Config) bot.HandlerFunc {
 	}
 }
 
-// hasForwardMessage 检查事件是否包含合并转发消息
 func hasForwardMessage(event *bot.Event) bool {
 	if event.Message == nil {
 		return false
@@ -151,7 +150,6 @@ func hasForwardMessage(event *bot.Event) bool {
 	return false
 }
 
-// getForwardID 从事件中获取转发消息ID
 func getForwardID(event *bot.Event) string {
 	if event.Message == nil {
 		return ""

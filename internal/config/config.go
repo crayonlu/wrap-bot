@@ -43,7 +43,6 @@ type Config struct {
 	SerpAPIKey          string
 	WeatherAPIKey       string
 	AIToolsEnabled      []string
-	ChatExplainerPrompt string
 }
 
 func Load() *Config {
@@ -81,7 +80,6 @@ func Load() *Config {
 		SerpAPIKey:          getEnv("SERP_API_KEY", ""),
 		WeatherAPIKey:       getEnv("WEATHER_API_KEY", ""),
 		AIToolsEnabled:      getEnvStringSlice("AI_TOOLS", []string{}),
-		ChatExplainerPrompt: getEnv("CHAT_EXPLAINER_PROMPT", "configs/chat_explainer_prompt.md"),
 	}
 
 	logger.Info("================================================")
