@@ -53,11 +53,18 @@ func (a *Analyzer) AnalyzeAll(ctx context.Context, messages []ChatMessage) (*Cha
 		return nil, err
 	}
 
+	for i, analysis := range chainResult.MessageAnalyses {
+		if i < len(mergedGroup.MergedMessages) {
+			mergedGroup.MergedMessages[i].AnalysisContent = analysis.Content
+		}
+	}
+
 	return &ChatAnalysis{
 		MessageAnalyses: chainResult.MessageAnalyses,
 		Summary:         chainResult.Summary,
 		OriginalCount:   mergedGroup.OriginalCount,
 		MergedCount:     mergedGroup.MergedCount,
+		MergedGroup:     &mergedGroup,
 	}, nil
 }
 

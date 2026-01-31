@@ -106,14 +106,12 @@ func ChatExplainerPlugin(cfg *config.Config) bot.HandlerFunc {
 			return
 		}
 
-		mergedGroup := parser.MergeConsecutiveMessages(forwardedChat.Messages)
-
 		nodes := chat_explainer.BuildForwardNodesWithMerge(
 			forwardedChat.Messages,
 			analysis.MessageAnalyses,
 			analysis.Summary,
 			ctx.Event.SelfID,
-			&mergedGroup,
+			analysis.MergedGroup,
 		)
 
 		if ctx.Event.IsGroupMessage() {

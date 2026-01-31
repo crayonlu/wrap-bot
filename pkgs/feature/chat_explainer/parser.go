@@ -377,38 +377,66 @@ func (p *Parser) MergeConsecutiveMessages(messages []ChatMessage) MessageGroup {
 func BuildForwardNodesWithMerge(messages []ChatMessage, analyses []MessageAnalysis, summary string, selfID int64, mergedInfo *MessageGroup) []napcat.ForwardNode {
 	var nodes []napcat.ForwardNode
 
-	for i, msg := range messages {
-		var segments []napcat.MessageSegment
+	if mergedInfo != nil {
+		for _, merged := range mergedInfo.MergedMessages {
+			var segments []napcat.MessageSegment
 
-		if msg.Content != "" {
-			segments = append(segments, napcat.NewTextSegment(msg.Content))
-		}
-
-		for _, imageURL := range msg.Images {
-			segments = append(segments, napcat.NewImageSegment(imageURL))
-		}
-
-		analysisContent := analyses[i].Content
-		if mergedInfo != nil && i < len(mergedInfo.MergedMessages) {
-			if len(mergedInfo.MergedMessages[i].Contents) > 1 {
-				analysisContent = fmt.Sprintf("【连续消息 x%d】%s", len(mergedInfo.MergedMessages[i].Contents), analysisContent)
+			content := strings.Join(merged.Contents, "\n")
+			if content != "" {
+				segments = append(segments, napcat.NewTextSegment(content))
 			}
-		}
 
-		if analysisContent != "" {
-			segments = append(segments, napcat.NewTextSegment("\n-------\n"+analysisContent))
-		}
+			for _, imageURL := range merged.Images {
+				segments = append(segments, napcat.NewImageSegment(imageURL))
+			}
 
-		if len(segments) == 0 {
-			segments = append(segments, napcat.NewTextSegment("[无内容]"))
-		}
+			analysisContent := merged.AnalysisContent
+			if len(merged.Contents) > 1 {
+				analysisContent = fmt.Sprintf("【连续消息 x%d】%s", len(merged.Contents), analysisContent)
+			}
 
-		node := napcat.NewMixedForwardNode(
-			msg.SenderName,
-			msg.SenderID,
-			segments...,
-		)
-		nodes = append(nodes, node)
+			if analysisContent != "" {
+				segments = append(segments, napcat.NewTextSegment("\n-------\n"+analysisContent))
+			}
+
+			if len(segments) == 0 {
+				segments = append(segments, napcat.NewTextSegment("[无内容]"))
+			}
+
+			node := napcat.NewMixedForwardNode(
+				merged.SenderName,
+				merged.SenderID,
+				segments...,
+			)
+			nodes = append(nodes, node)
+		}
+	} else {
+		for i, msg := range messages {
+			var segments []napcat.MessageSegment
+
+			if msg.Content != "" {
+				segments = append(segments, napcat.NewTextSegment(msg.Content))
+			}
+
+			for _, imageURL := range msg.Images {
+				segments = append(segments, napcat.NewImageSegment(imageURL))
+			}
+
+			if i < len(analyses) && analyses[i].Content != "" {
+				segments = append(segments, napcat.NewTextSegment("\n-------\n"+analyses[i].Content))
+			}
+
+			if len(segments) == 0 {
+				segments = append(segments, napcat.NewTextSegment("[无内容]"))
+			}
+
+			node := napcat.NewMixedForwardNode(
+				msg.SenderName,
+				msg.SenderID,
+				segments...,
+			)
+			nodes = append(nodes, node)
+		}
 	}
 
 	if summary != "" {
