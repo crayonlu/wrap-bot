@@ -102,9 +102,6 @@ func (a *Analyzer) chainAnalyze(ctx context.Context, config *ChainRequestConfig)
 func (a *Analyzer) processSingleMessage(ctx context.Context, conversationID string, msg ChatMessage, index int, previousAnalyses []MessageAnalysis) (string, error) {
 	prompt := a.buildSingleMessagePrompt(msg, previousAnalyses)
 
-	a.logger.Info(fmt.Sprintf("[Prompt] 消息%d，发送者: %s, 内容长度: %d", index+1, msg.SenderName, len(prompt)))
-	a.logger.Debug(fmt.Sprintf("[Prompt] 完整内容: %s", prompt))
-
 	var result *agent.ChatResult
 	var err error
 

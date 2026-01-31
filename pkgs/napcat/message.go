@@ -200,9 +200,9 @@ func NewCustomForwardNode(name string, uin int64, content interface{}) ForwardNo
 	return ForwardNode{
 		Type: "node",
 		Data: map[string]interface{}{
-			"name":    name,
-			"uin":     uin,
-			"content": content,
+			"nickname": name,
+			"user_id":  uin,
+			"content":  content,
 		},
 	}
 }
@@ -216,9 +216,9 @@ func NewMixedForwardNode(name string, uin int64, segments ...MessageSegment) For
 	return ForwardNode{
 		Type: "node",
 		Data: map[string]interface{}{
-			"name":    name,
-			"uin":     uin,
-			"content": content,
+			"nickname": name,
+			"user_id":  uin,
+			"content":  content,
 		},
 	}
 }

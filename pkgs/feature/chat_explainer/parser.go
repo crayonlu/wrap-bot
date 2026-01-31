@@ -71,6 +71,37 @@ func (p *Parser) parseSingleMessage(data map[string]interface{}) *ChatMessage {
 		}
 		if userID, ok := sender["user_id"].(float64); ok {
 			msg.SenderID = int64(userID)
+		} else if userIDStr, ok := sender["user_id"].(string); ok {
+			if parsedID, err := strconv.ParseInt(userIDStr, 10, 64); err == nil {
+				msg.SenderID = parsedID
+			}
+		}
+	} else {
+		if nickname, ok := data["sender_nickname"].(string); ok {
+			msg.SenderName = nickname
+		}
+		if userID, ok := data["sender_user_id"].(float64); ok {
+			msg.SenderID = int64(userID)
+		} else if userIDStr, ok := data["sender_user_id"].(string); ok {
+			if parsedID, err := strconv.ParseInt(userIDStr, 10, 64); err == nil {
+				msg.SenderID = parsedID
+			}
+		}
+	}
+
+	if msg.SenderName == "" {
+		if nickname, ok := data["nickname"].(string); ok {
+			msg.SenderName = nickname
+		}
+	}
+
+	if msg.SenderID == 0 {
+		if userID, ok := data["user_id"].(float64); ok {
+			msg.SenderID = int64(userID)
+		} else if userIDStr, ok := data["user_id"].(string); ok {
+			if parsedID, err := strconv.ParseInt(userIDStr, 10, 64); err == nil {
+				msg.SenderID = parsedID
+			}
 		}
 	}
 
@@ -80,6 +111,10 @@ func (p *Parser) parseSingleMessage(data map[string]interface{}) *ChatMessage {
 
 	if messageID, ok := data["message_id"].(float64); ok {
 		msg.MessageID = int64(messageID)
+	} else if msgIDStr, ok := data["message_id"].(string); ok {
+		if parsedID, err := strconv.ParseInt(msgIDStr, 10, 64); err == nil {
+			msg.MessageID = parsedID
+		}
 	}
 
 	content := p.extractContent(data)
@@ -202,20 +237,28 @@ func BuildForwardNodes(messages []ChatMessage, analyses []MessageAnalysis, summa
 	var nodes []napcat.ForwardNode
 
 	for i, msg := range messages {
-		var content strings.Builder
+		var segments []napcat.MessageSegment
 
-		original := BuildOriginalContent(msg)
-		content.WriteString(original)
+		if msg.Content != "" {
+			segments = append(segments, napcat.NewTextSegment(msg.Content))
+		}
 
-		if i < len(analyses) {
-			content.WriteString("\n-------\n")
-			content.WriteString(analyses[i].Content)
+		for _, imageURL := range msg.Images {
+			segments = append(segments, napcat.NewImageSegment(imageURL))
+		}
+
+		if i < len(analyses) && analyses[i].Content != "" {
+			segments = append(segments, napcat.NewTextSegment("\n-------\n"+analyses[i].Content))
+		}
+
+		if len(segments) == 0 {
+			segments = append(segments, napcat.NewTextSegment("[无内容]"))
 		}
 
 		node := napcat.NewMixedForwardNode(
 			msg.SenderName,
 			msg.SenderID,
-			napcat.NewTextSegment(content.String()),
+			segments...,
 		)
 		nodes = append(nodes, node)
 	}
