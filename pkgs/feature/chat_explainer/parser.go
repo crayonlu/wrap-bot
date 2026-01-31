@@ -329,7 +329,7 @@ func (p *Parser) MergeConsecutiveMessages(messages []ChatMessage) MessageGroup {
 					Timestamps:  []int64{msg.Timestamp},
 					Contents:    []string{msg.Content},
 				}
-			} else if current.SenderID == msg.SenderID {
+			} else if current.SenderName == msg.SenderName {
 				current.Contents = append(current.Contents, msg.Content)
 				current.MessageIDs = append(current.MessageIDs, msg.MessageID)
 				current.Timestamps = append(current.Timestamps, msg.Timestamp)
