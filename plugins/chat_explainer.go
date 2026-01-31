@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/crayon/wrap-bot/internal/config"
 	"github.com/crayon/wrap-bot/pkgs/bot"
@@ -33,7 +34,16 @@ func ChatExplainerPlugin(cfg *config.Config) bot.HandlerFunc {
 
 	factory := factory.NewFactory(aiCfg)
 	chatAgent := factory.CreateAgent()
-	analyzer := chat_explainer.NewAnalyzer(chatAgent, "", 20)
+
+	systemPrompt := ""
+	if cfg.SystemPromptPath != "" {
+		data, err := os.ReadFile(cfg.SystemPromptPath)
+		if err == nil {
+			systemPrompt = string(data)
+		}
+	}
+
+	analyzer := chat_explainer.NewAnalyzer(chatAgent, systemPrompt, 20)
 	parser := chat_explainer.NewParser()
 
 	return func(ctx *bot.Context) {

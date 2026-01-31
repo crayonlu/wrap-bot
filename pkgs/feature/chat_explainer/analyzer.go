@@ -8,13 +8,11 @@ import (
 	"time"
 
 	"github.com/crayon/wrap-bot/pkgs/feature/ai/agent"
-	"github.com/crayon/wrap-bot/pkgs/feature/ai/memory"
 	"github.com/crayon/wrap-bot/pkgs/logger"
 )
 
 type Analyzer struct {
 	agent        *agent.ChatAgent
-	memoryStore  *memory.MemoryStore
 	systemPrompt string
 	logger       *logger.Logger
 }
@@ -22,7 +20,6 @@ type Analyzer struct {
 func NewAnalyzer(chatAgent *agent.ChatAgent, systemPrompt string, maxHistory int) *Analyzer {
 	return &Analyzer{
 		agent:        chatAgent,
-		memoryStore:  memory.NewMemoryStore(maxHistory),
 		systemPrompt: systemPrompt,
 		logger:       logger.NewLogger(1000),
 	}

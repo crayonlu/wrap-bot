@@ -97,6 +97,7 @@ func (a *ChatAgent) ChatWithOptions(ctx context.Context, conversationID, message
 	}
 
 	resp, err := a.config.Provider.Complete(ctx, req)
+	logger.Debug(fmt.Sprintf("[Chat] request: %+v", req))
 	if err != nil {
 		logger.Error(fmt.Sprintf("[Chat] API request failed: %v", err))
 		return nil, err
@@ -207,6 +208,8 @@ func (a *ChatAgent) ChatWithImagesAndOptions(ctx context.Context, conversationID
 	} else {
 		logger.Warn("[ChatWithImages] No tools available - check AI_TOOLS configuration")
 	}
+
+	logger.Debug(fmt.Sprintf("[ChatWithImages] request: %+v", req))
 
 	resp, err := a.config.Provider.Complete(ctx, req)
 	if err != nil {
@@ -389,33 +392,6 @@ func convertMessagesToChatRequest(messages []memory.Message) []ai.Message {
 	result := make([]ai.Message, 0, len(messages))
 	for _, msg := range messages {
 		content := msg.Content
-		if msg.Role != "system" && !msg.Timestamp.IsZero() {
-			timeStr := msg.Timestamp.Format("2006-01-02 15:04:05")
-			if contentStr, ok := content.(string); ok {
-				content = fmt.Sprintf("[%s] %s", timeStr, contentStr)
-			} else if contentItems, ok := content.([]ai.ContentItem); ok {
-				newItems := make([]ai.ContentItem, 0, len(contentItems))
-				timeAdded := false
-				for _, item := range contentItems {
-					if item.Type == "text" && !timeAdded {
-						newItems = append(newItems, ai.ContentItem{
-							Type: "text",
-							Text: fmt.Sprintf("[%s] %s", timeStr, item.Text),
-						})
-						timeAdded = true
-					} else {
-						newItems = append(newItems, item)
-					}
-				}
-				if !timeAdded {
-					newItems = append([]ai.ContentItem{{
-						Type: "text",
-						Text: fmt.Sprintf("[%s]", timeStr),
-					}}, newItems...)
-				}
-				content = newItems
-			}
-		}
 
 		aiMsg := ai.Message{
 			Role:       msg.Role,
