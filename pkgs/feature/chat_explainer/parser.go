@@ -305,3 +305,120 @@ func (p *Parser) FindMessageByID(messages []ChatMessage, id int64) *ChatMessage 
 	}
 	return nil
 }
+
+func (p *Parser) IsMergeable(msg ChatMessage) bool {
+	return msg.MessageType == "text" && msg.ReplyTo == nil && len(msg.Images) == 0
+}
+
+func (p *Parser) MergeConsecutiveMessages(messages []ChatMessage) MessageGroup {
+	if len(messages) == 0 {
+		return MessageGroup{}
+	}
+
+	var merged []MergedMessage
+	var current *MergedMessage
+
+	for _, msg := range messages {
+		if p.IsMergeable(msg) {
+			if current == nil {
+				current = &MergedMessage{
+					SenderName:  msg.SenderName,
+					SenderID:    msg.SenderID,
+					MessageType: msg.MessageType,
+					MessageIDs:  []int64{msg.MessageID},
+					Timestamps:  []int64{msg.Timestamp},
+					Contents:    []string{msg.Content},
+				}
+			} else if current.SenderID == msg.SenderID {
+				current.Contents = append(current.Contents, msg.Content)
+				current.MessageIDs = append(current.MessageIDs, msg.MessageID)
+				current.Timestamps = append(current.Timestamps, msg.Timestamp)
+			} else {
+				if current != nil {
+					merged = append(merged, *current)
+				}
+				current = &MergedMessage{
+					SenderName:  msg.SenderName,
+					SenderID:    msg.SenderID,
+					MessageType: msg.MessageType,
+					MessageIDs:  []int64{msg.MessageID},
+					Timestamps:  []int64{msg.Timestamp},
+					Contents:    []string{msg.Content},
+				}
+			}
+		} else {
+			if current != nil {
+				merged = append(merged, *current)
+				current = nil
+			}
+			merged = append(merged, MergedMessage{
+				SenderName:  msg.SenderName,
+				SenderID:    msg.SenderID,
+				Contents:    []string{msg.Content},
+				Images:      msg.Images,
+				MessageType: msg.MessageType,
+				MessageIDs:  []int64{msg.MessageID},
+				Timestamps:  []int64{msg.Timestamp},
+			})
+		}
+	}
+
+	if current != nil {
+		merged = append(merged, *current)
+	}
+
+	return MessageGroup{
+		MergedMessages: merged,
+		OriginalCount:  len(messages),
+		MergedCount:    len(merged),
+	}
+}
+
+func BuildForwardNodesWithMerge(messages []ChatMessage, analyses []MessageAnalysis, summary string, selfID int64, mergedInfo *MessageGroup) []napcat.ForwardNode {
+	var nodes []napcat.ForwardNode
+
+	for i, msg := range messages {
+		var segments []napcat.MessageSegment
+
+		if msg.Content != "" {
+			segments = append(segments, napcat.NewTextSegment(msg.Content))
+		}
+
+		for _, imageURL := range msg.Images {
+			segments = append(segments, napcat.NewImageSegment(imageURL))
+		}
+
+		analysisContent := analyses[i].Content
+		if mergedInfo != nil && i < len(mergedInfo.MergedMessages) {
+			if len(mergedInfo.MergedMessages[i].Contents) > 1 {
+				analysisContent = fmt.Sprintf("【连续消息 x%d】%s", len(mergedInfo.MergedMessages[i].Contents), analysisContent)
+			}
+		}
+
+		if analysisContent != "" {
+			segments = append(segments, napcat.NewTextSegment("\n-------\n"+analysisContent))
+		}
+
+		if len(segments) == 0 {
+			segments = append(segments, napcat.NewTextSegment("[无内容]"))
+		}
+
+		node := napcat.NewMixedForwardNode(
+			msg.SenderName,
+			msg.SenderID,
+			segments...,
+		)
+		nodes = append(nodes, node)
+	}
+
+	if summary != "" {
+		summaryNode := napcat.NewMixedForwardNode(
+			"整体总结",
+			selfID,
+			napcat.NewTextSegment(summary),
+		)
+		nodes = append(nodes, summaryNode)
+	}
+
+	return nodes
+}

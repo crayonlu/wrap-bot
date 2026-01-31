@@ -15,6 +15,7 @@ type Analyzer struct {
 	agent        *agent.ChatAgent
 	systemPrompt string
 	logger       *logger.Logger
+	parser       *Parser
 }
 
 func NewAnalyzer(chatAgent *agent.ChatAgent, systemPrompt string, maxHistory int) *Analyzer {
@@ -22,6 +23,7 @@ func NewAnalyzer(chatAgent *agent.ChatAgent, systemPrompt string, maxHistory int
 		agent:        chatAgent,
 		systemPrompt: systemPrompt,
 		logger:       logger.NewLogger(1000),
+		parser:       NewParser(),
 	}
 }
 
@@ -30,7 +32,23 @@ func (a *Analyzer) AnalyzeAll(ctx context.Context, messages []ChatMessage) (*Cha
 		return &ChatAnalysis{}, nil
 	}
 
-	chainResult, err := a.AnalyzeWithChain(ctx, messages)
+	mergedGroup := a.parser.MergeConsecutiveMessages(messages)
+
+	mergedMessages := make([]ChatMessage, 0, len(mergedGroup.MergedMessages))
+	for _, merged := range mergedGroup.MergedMessages {
+		mergedMsg := ChatMessage{
+			MessageID:   merged.MessageIDs[0],
+			SenderName:  merged.SenderName,
+			SenderID:    merged.SenderID,
+			Content:     strings.Join(merged.Contents, "\n"),
+			Images:      merged.Images,
+			MessageType: merged.MessageType,
+			Timestamp:   merged.Timestamps[0],
+		}
+		mergedMessages = append(mergedMessages, mergedMsg)
+	}
+
+	chainResult, err := a.AnalyzeWithChain(ctx, mergedMessages)
 	if err != nil {
 		return nil, err
 	}
@@ -38,6 +56,8 @@ func (a *Analyzer) AnalyzeAll(ctx context.Context, messages []ChatMessage) (*Cha
 	return &ChatAnalysis{
 		MessageAnalyses: chainResult.MessageAnalyses,
 		Summary:         chainResult.Summary,
+		OriginalCount:   mergedGroup.OriginalCount,
+		MergedCount:     mergedGroup.MergedCount,
 	}, nil
 }
 
@@ -132,7 +152,13 @@ func (a *Analyzer) buildSingleMessagePrompt(msg ChatMessage, previousAnalyses []
 		prompt.WriteString("\n")
 	}
 
-	prompt.WriteString("【当前消息】请分析以下这条群聊消息：\n")
+	isMerged := strings.Contains(msg.Content, "\n")
+	if isMerged {
+		prompt.WriteString("【当前消息（多条连续消息合并）】请分析以下这些连续的群聊消息：\n")
+	} else {
+		prompt.WriteString("【当前消息】请分析以下这条群聊消息：\n")
+	}
+
 	prompt.WriteString(fmt.Sprintf("发送者：%s (ID: %d)\n", msg.SenderName, msg.SenderID))
 
 	if msg.Content != "" {
@@ -147,7 +173,11 @@ func (a *Analyzer) buildSingleMessagePrompt(msg ChatMessage, previousAnalyses []
 		prompt.WriteString(fmt.Sprintf("回复给：%s 的消息\n", msg.ReplyTo.SenderName))
 	}
 
-	prompt.WriteString("\n请结合上面的对话上下文，用2-3句话解释这条消息在讨论什么，在对话中起什么作用。")
+	if isMerged {
+		prompt.WriteString("\n注意：以上是同一用户连续发送的多条消息，请将它们作为整体进行分析。")
+	}
+
+	prompt.WriteString("\n请结合上面的对话上下文，用2-3句话解释这些消息在讨论什么，在对话中起什么作用。")
 
 	return prompt.String()
 }

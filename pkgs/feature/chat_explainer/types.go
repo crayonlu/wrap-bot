@@ -27,6 +27,8 @@ type MessageAnalysis struct {
 type ChatAnalysis struct {
 	MessageAnalyses []MessageAnalysis
 	Summary         string
+	OriginalCount   int
+	MergedCount     int
 }
 
 type MessageProcessingStatus struct {
@@ -51,4 +53,20 @@ type ChainRequestResult struct {
 	SuccessCount    int
 	FailedCount     int
 	Errors          []error
+}
+
+type MergedMessage struct {
+	SenderName  string
+	SenderID    int64
+	Contents    []string
+	Images      []string
+	MessageType string
+	MessageIDs  []int64
+	Timestamps  []int64
+}
+
+type MessageGroup struct {
+	MergedMessages []MergedMessage
+	OriginalCount  int
+	MergedCount    int
 }
