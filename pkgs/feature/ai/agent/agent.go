@@ -70,13 +70,13 @@ func (a *ChatAgent) ChatWithOptions(ctx context.Context, conversationID, message
 		history, _ := a.config.History.GetHistory(conversationID)
 		logger.Info(fmt.Sprintf("[Chat] History size: %d messages", len(history)))
 		messages = append(messages, history...)
-	} else {
-		messages = append(messages, memory.Message{
-			Role:      "user",
-			Content:   message,
-			Timestamp: time.Now(),
-		})
 	}
+
+	messages = append(messages, memory.Message{
+		Role:      "user",
+		Content:   message,
+		Timestamp: time.Now(),
+	})
 
 	req := ai.ChatRequest{
 		Model:       a.config.Model,
